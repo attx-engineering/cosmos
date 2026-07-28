@@ -1,0 +1,17 @@
+# plugin.txt - WarpLink plugin for WarpOS flight software
+
+# WarpOS build target name — updated automatically by CosmosUpdateCmdTlm.py.
+# Change this default when installing if you want a different deploy name.
+VARIABLE warplink_target WARP_CUBE
+
+# Define the target (folder name in targets/ must match warplink_target)
+TARGET <%= warplink_target %> <%= warplink_target %>
+
+# Define the interface: uncomment the line that matches your hardware connection
+#INTERFACE <%= warplink_target %>_INT openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 115200 NONE 1 10.0 None # Serial to Linux
+INTERFACE <%= warplink_target %>_INT openc3/interfaces/udp_interface.py 10.1.4.27 5006 5005 None None 128 10.0 None # RasPi UDP
+#INTERFACE <%= warplink_target %>_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal 5000 5000 10.0 None # Docker routing to Windows bridge
+  PROTOCOL WRITE openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
+  PROTOCOL READ check_pattern.py
+  PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
+  MAP_TARGET <%= warplink_target %>
