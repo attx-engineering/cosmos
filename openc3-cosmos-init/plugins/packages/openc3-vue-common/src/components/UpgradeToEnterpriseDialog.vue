@@ -89,6 +89,11 @@ export default {
   float: right;
   margin: 15px;
 }
+.logo img {
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+}
 
 .cosmos {
   text-align: center;

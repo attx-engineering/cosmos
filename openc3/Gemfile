@@ -5,7 +5,11 @@ source ENV['RUBYGEMS_URL'] || "https://rubygems.org"
 gemspec :name => 'openc3'
 
 # Include the rails gems for the convenience of custom microservice plugins
-gem 'bootsnap', '>= 1.9.3', require: false
+# Capped below 1.24.2: its ISeq compile cache reads sources with
+# File.read(encoding: UTF_8), which transcodes to Encoding.default_internal.
+# openc3.rb sets that to ASCII_8BIT, so any gem source containing a non-ASCII
+# byte (e.g. matrix.rb) fails to load with an UndefinedConversionError.
+gem 'bootsnap', '>= 1.9.3', '< 1.24.2', require: false
 gem 'rack-cors', '~> 3.0'
 gem 'rails', '~> 7.2.0'
 gem 'tzinfo-data'

@@ -1,0 +1,11 @@
+COMMAND <<TARGET>> <<PACKET_NAME>> <<ENDIANNESS>> "<<DESCRIPTION>>"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       <<APID>>  "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       <<SIZE>>  "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+<<ADDITIONAL_FIELDS>>

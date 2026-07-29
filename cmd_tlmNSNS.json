@@ -1,0 +1,772 @@
+{
+    "build_name": "NSNS",
+    "schema_version": 2,
+    "cosmos_target": "NSNS",
+    "apps": [
+        {
+            "name": "Flight Executive",
+            "short_name": "EXECUTIVE",
+            "app_file": "flight/FlightExecutive",
+            "description": "Flight scheduler and executive for managing app execution.",
+            "apid_base": 0,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [
+                {
+                    "name": "STATUS",
+                    "apid": 1,
+                    "apid_macro": "TLM_EXECUTIVE_STATUS",
+                    "description": "Overall system status packet.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "system_time",
+                            "type": "float32",
+                            "array_length": 0,
+                            "description": "Current system time onboard the spacecraft, zero at power-on.",
+                            "units": "s"
+                        },
+                        {
+                            "id": "loop_count",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "Number of cycles the onboard system schedule has executed."
+                        },
+                        {
+                            "id": "error_count",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Total number of error returns in the code, rolls over at 255."
+                        },
+                        {
+                            "id": "warning_count",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Total number of warning returns in the code, rolls over at 255."
+                        },
+                        {
+                            "id": "overrun_count",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Total number of schedule overruns, rolls over at 255."
+                        }
+                    ]
+                },
+                {
+                    "name": "APP_ERROR",
+                    "apid": 2,
+                    "apid_macro": "TLM_EXECUTIVE_APP_ERROR",
+                    "description": "App error tracking packet, produced when an app returns error or warning.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "app_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app returning error."
+                        },
+                        {
+                            "id": "error_code",
+                            "type": "int16",
+                            "array_length": 0,
+                            "description": "The error code returned by the app."
+                        },
+                        {
+                            "id": "schedule_slot",
+                            "type": "int16",
+                            "array_length": 0,
+                            "description": "The schedule slot where the error occurred; negative values represent startup."
+                        }
+                    ]
+                },
+                {
+                    "name": "SCHEDULE_OVERRUN",
+                    "apid": 3,
+                    "apid_macro": "TLM_EXECUTIVE_SCHEDULE_OVERRUN",
+                    "description": "Schedule overrun tracking packet, produced when an app overruns its schedule slot.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "app_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app which overran."
+                        },
+                        {
+                            "id": "schedule_slot",
+                            "type": "int16",
+                            "array_length": 0,
+                            "description": "The schedule slot the app was scheduled for."
+                        },
+                        {
+                            "id": "terminating_slot",
+                            "type": "int16",
+                            "array_length": 0,
+                            "description": "The schedule slot where the app actually returned."
+                        }
+                    ]
+                }
+            ],
+            "commands": []
+        },
+        {
+            "name": "Telemetry Manager",
+            "short_name": "TELEMETRY_MANAGER",
+            "app_file": "flight/TelemetryManager",
+            "description": "Manages telemetry queuing and transmission.",
+            "apid_base": 16,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [
+                {
+                    "name": "STATUS",
+                    "apid": 17,
+                    "apid_macro": "TLM_TELEMETRY_MANAGER_STATUS",
+                    "description": "Telemetry manager status packet.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "successful_packets",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "Rolling count of successfully sent packets."
+                        },
+                        {
+                            "id": "byte_queue_error",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Count of dropped packets due to queueing errors."
+                        },
+                        {
+                            "id": "ccsds_failure",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Count of dropped packets due to CCSDS failures."
+                        },
+                        {
+                            "id": "telem_write_error",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Count of dropped packets due to interface error."
+                        },
+                        {
+                            "id": "buffer_overwrite",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Count of dropped packets due to overwritten packets."
+                        }
+                    ]
+                }
+            ],
+            "commands": [
+                {
+                    "name": "CHANGE_TLM_RATE",
+                    "apid": 18,
+                    "apid_macro": "CMD_TELEMETRY_MANAGER_CHANGE_TLM_RATE",
+                    "description": "Change the telemetry rate of a specified APID.",
+                    "size": 11,
+                    "fields": [
+                        {
+                            "id": "rate_s",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "The updated telemetry rate (seconds component).",
+                            "units": "s"
+                        },
+                        {
+                            "id": "rate_ns",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "The updated telemetry rate (nanoseconds component).",
+                            "units": "ns"
+                        },
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the telemetry to change."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Instance of the telemetry to change."
+                        }
+                    ]
+                },
+                {
+                    "name": "CLEAR_QUEUE",
+                    "apid": 19,
+                    "apid_macro": "CMD_TELEMETRY_MANAGER_CLEAR_QUEUE",
+                    "description": "Clear the telemetry queues.",
+                    "size": 1,
+                    "fields": [
+                        {
+                            "id": "clear",
+                            "type": "bool",
+                            "array_length": 0,
+                            "description": "Set true to clear the telemetry queue."
+                        }
+                    ]
+                },
+                {
+                    "name": "MAX_BYTES_PER_STEP",
+                    "apid": 20,
+                    "apid_macro": "CMD_TELEMETRY_MANAGER_MAX_BYTES_PER_STEP",
+                    "description": "Set the maximum bytes per step for telemetry sending. Setting to 0 pauses all telemetry.",
+                    "size": 2,
+                    "fields": [
+                        {
+                            "id": "bytes",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The maximum number of bytes to allow per telemetry step."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Command Manager",
+            "short_name": "COMMAND_MANAGER",
+            "app_file": "flight/CommandManager",
+            "description": "Manages command routing and execution for all apps.",
+            "apid_base": 32,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [
+                {
+                    "name": "STATUS",
+                    "apid": 33,
+                    "apid_macro": "TLM_COMMAND_MANAGER_STATUS",
+                    "description": "Command Manager status packet.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "exc_error_count",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Rolling count of command execution errors."
+                        },
+                        {
+                            "id": "pkt_not_registered_count",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Rolling count of commands received for unregistered packets."
+                        },
+                        {
+                            "id": "crc_error_count",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Rolling count of commands received with CRC errors."
+                        },
+                        {
+                            "id": "timeout_count",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Rolling count of times the command queue has been cleared due to timeout."
+                        },
+                        {
+                            "id": "successful_cmd_count",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Rolling count of successfully processed commands."
+                        }
+                    ]
+                },
+                {
+                    "name": "ERROR",
+                    "apid": 34,
+                    "apid_macro": "TLM_COMMAND_MANAGER_ERROR",
+                    "description": "Command Manager error packet.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "error_code",
+                            "type": "int16",
+                            "array_length": 0,
+                            "description": "Error code returned from command manager."
+                        },
+                        {
+                            "id": "cmd_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Command APID that caused the error."
+                        }
+                    ]
+                }
+            ],
+            "commands": [
+                {
+                    "name": "SOFT_RESET",
+                    "apid": 35,
+                    "apid_macro": "CMD_COMMAND_MANAGER_SOFT_RESET",
+                    "description": "Perform a soft reset on any app, given the APID and instance.",
+                    "size": 3,
+                    "fields": [
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app to reset."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "The instance of the app to reset."
+                        }
+                    ]
+                },
+                {
+                    "name": "LOG_LEVEL",
+                    "apid": 36,
+                    "apid_macro": "CMD_COMMAND_MANAGER_LOG_LEVEL",
+                    "description": "Change the log level of any app, given the APID and instance.",
+                    "size": 4,
+                    "fields": [
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app to change."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "The instance of the app to change."
+                        },
+                        {
+                            "id": "log_level",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "The log level to set the app to."
+                        }
+                    ]
+                },
+                {
+                    "name": "SCHEDULE",
+                    "apid": 37,
+                    "apid_macro": "CMD_COMMAND_MANAGER_SCHEDULE",
+                    "description": "Change the schedule slot of any app, given the APID and instance.",
+                    "size": 5,
+                    "fields": [
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app to schedule."
+                        },
+                        {
+                            "id": "slot",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The slot to schedule the app in (0 to unregister)."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "The instance of the app to schedule."
+                        }
+                    ]
+                },
+                {
+                    "name": "NO_OP",
+                    "apid": 38,
+                    "apid_macro": "CMD_COMMAND_MANAGER_NO_OP",
+                    "description": "A no-operation command.",
+                    "size": 1,
+                    "fields": [
+                        {
+                            "id": "no_op",
+                            "type": "bool",
+                            "array_length": 0,
+                            "description": "Boolean value. Not used."
+                        }
+                    ]
+                },
+                {
+                    "name": "ACTIVATE_APP",
+                    "apid": 39,
+                    "apid_macro": "CMD_COMMAND_MANAGER_ACTIVATE_APP",
+                    "description": "Activate any app, given the APID and instance.",
+                    "size": 3,
+                    "fields": [
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app to activate."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "The instance of the app to activate."
+                        }
+                    ]
+                },
+                {
+                    "name": "DEACTIVATE_APP",
+                    "apid": 40,
+                    "apid_macro": "CMD_COMMAND_MANAGER_DEACTIVATE_APP",
+                    "description": "Deactivate any app, given the APID and instance.",
+                    "size": 3,
+                    "fields": [
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the app to deactivate."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "The instance of the app to deactivate."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Storage Manager",
+            "short_name": "STORAGE_MANAGER",
+            "app_file": "flight/StorageManager",
+            "description": "Manages data storage and retrieval for telemetry.",
+            "apid_base": 48,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [],
+            "commands": [
+                {
+                    "name": "CHANGE_STG_RATE",
+                    "apid": 49,
+                    "apid_macro": "CMD_STORAGE_MANAGER_CHANGE_STG_RATE",
+                    "description": "Change the storage rate of a specified APID.",
+                    "size": 11,
+                    "fields": [
+                        {
+                            "id": "rate_s",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "The updated storage rate (seconds component).",
+                            "units": "s"
+                        },
+                        {
+                            "id": "rate_ns",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "The updated storage rate (nanoseconds component).",
+                            "units": "ns"
+                        },
+                        {
+                            "id": "target_apid",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "The APID of the telemetry to change."
+                        },
+                        {
+                            "id": "instance",
+                            "type": "uint8",
+                            "array_length": 0,
+                            "description": "Instance of the APID."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Onboard Communications Manager",
+            "short_name": "OCOMM_MANAGER",
+            "app_file": "flight/OnboardCommunicationsManager",
+            "description": "Manages CSP-based onboard inter-node communications, routing inbound and outbound packets between registered apps and the CSP bus.",
+            "apid_base": 64,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [
+                {
+                    "name": "STATUS",
+                    "apid": 65,
+                    "apid_macro": "TLM_OCOMM_MANAGER_STATUS",
+                    "description": "Onboard communications (CSP) manager status packet reporting rolling bus health counters.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "successful_rx",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "Rolling count of payloads delivered to apps."
+                        },
+                        {
+                            "id": "successful_tx",
+                            "type": "uint32",
+                            "array_length": 0,
+                            "description": "Rolling count of payloads transmitted to the bus."
+                        },
+                        {
+                            "id": "dropped_rx",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Count of received packets with no registered port."
+                        },
+                        {
+                            "id": "tx_error",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Count of failed transmissions."
+                        },
+                        {
+                            "id": "no_route",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Count of sends that could not be routed."
+                        },
+                        {
+                            "id": "buffer_error",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Count of CSP buffer acquisition failures."
+                        }
+                    ]
+                }
+            ],
+            "commands": [
+                {
+                    "name": "CLEAR_COUNTERS",
+                    "apid": 66,
+                    "apid_macro": "CMD_OCOMM_MANAGER_CLEAR_COUNTERS",
+                    "description": "Reset the rolling rx/tx/error counters reported in the status telemetry.",
+                    "size": 1,
+                    "fields": [
+                        {
+                            "id": "clear",
+                            "type": "bool",
+                            "array_length": 0,
+                            "description": "Set true to clear all status counters."
+                        }
+                    ]
+                },
+                {
+                    "name": "MAX_PKTS_PER_STEP",
+                    "apid": 67,
+                    "apid_macro": "CMD_OCOMM_MANAGER_MAX_PKTS_PER_STEP",
+                    "description": "Set the maximum number of CSP packets routed per scheduler step.",
+                    "size": 2,
+                    "fields": [
+                        {
+                            "id": "max_packets",
+                            "type": "uint16",
+                            "array_length": 0,
+                            "description": "Max CSP packets to route per execute() call."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "PD Attitude Control",
+            "short_name": "GNC_PD_ATT_CTRL",
+            "app_file": "apps/gnc/PdAttitudeControl",
+            "description": "PD attitude controller for spacecraft attitude stabilization.",
+            "apid_base": 80,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [
+                {
+                    "name": "DATA",
+                    "apid": 81,
+                    "apid_macro": "TLM_GNC_PD_ATT_CTRL_DATA",
+                    "description": "PD control output packet.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "att_err_rad",
+                            "type": "float16",
+                            "array_length": 0,
+                            "description": "Angular magnitude of the difference between command and current attitude.",
+                            "units": "rad"
+                        },
+                        {
+                            "id": "err_quat",
+                            "type": "float16",
+                            "array_length": 4,
+                            "description": "Error quaternion (actual relative to command)."
+                        },
+                        {
+                            "id": "err_ang_vel",
+                            "type": "float16",
+                            "array_length": 3,
+                            "description": "Difference between actual and commanded angular velocity.",
+                            "units": "rad/s"
+                        },
+                        {
+                            "id": "cmd_torque",
+                            "type": "float16",
+                            "array_length": 3,
+                            "description": "Command torque output of the app.",
+                            "units": "N*m"
+                        }
+                    ]
+                }
+            ],
+            "commands": [
+                {
+                    "name": "CHANGE_GAIN",
+                    "apid": 82,
+                    "apid_macro": "CMD_GNC_PD_ATT_CTRL_CHANGE_GAIN",
+                    "description": "Change the gain parameters of the PD attitude controller.",
+                    "size": 12,
+                    "fields": [
+                        {
+                            "id": "P",
+                            "type": "float16",
+                            "array_length": 3,
+                            "description": "The proportional gain for the controller."
+                        },
+                        {
+                            "id": "K",
+                            "type": "float16",
+                            "array_length": 3,
+                            "description": "The derivative gain for the controller."
+                        }
+                    ]
+                },
+                {
+                    "name": "SET_DEADBAND",
+                    "apid": 83,
+                    "apid_macro": "CMD_GNC_PD_ATT_CTRL_SET_DEADBAND",
+                    "description": "Change the deadband of the PD attitude controller.",
+                    "size": 8,
+                    "fields": [
+                        {
+                            "id": "att_deadband_rad",
+                            "type": "float32",
+                            "array_length": 0,
+                            "description": "The attitude deadband for the PD attitude controller.",
+                            "units": "rad"
+                        },
+                        {
+                            "id": "rate_deadband_rad_s",
+                            "type": "float32",
+                            "array_length": 0,
+                            "description": "The rate deadband for the PD attitude controller.",
+                            "units": "rad/s"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Two Axis Pointing Guidance",
+            "short_name": "GNC_TWO_AXIS_PNT",
+            "app_file": "apps/gnc/TwoAxisPointingGuidance",
+            "description": "Two-axis pointing guidance algorithm.",
+            "apid_base": 96,
+            "instances": [
+                {
+                    "instance": 0,
+                    "scheduled_rate_hz": 0
+                }
+            ],
+            "telemetry": [
+                {
+                    "name": "DATA",
+                    "apid": 97,
+                    "apid_macro": "TLM_GNC_TWO_AXIS_PNT_DATA",
+                    "description": "Two axis pointing guidance output packet.",
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "id": "quat_body_ref",
+                            "type": "float16",
+                            "array_length": 4,
+                            "description": "Quaternion describing the output pointing calculation."
+                        }
+                    ]
+                }
+            ],
+            "commands": []
+        }
+    ]
+}
