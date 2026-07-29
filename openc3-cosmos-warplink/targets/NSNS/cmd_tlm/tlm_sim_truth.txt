@@ -1,0 +1,193 @@
+# ##############################################################################
+# Spacecraft simulation truth (SIM_SPACECRAFT)
+# Truth state published by the WarpTwin Spacecraft assembly model, one instance per
+# spacecraft in the sim. Not a flight app: this packet has no entry in a WarpOS build
+# manifest, so CosmosUpdateCmdTlm.py does not generate it and it lives in this separate
+# file to survive regeneration of tlm.txt.
+# Base APID: 0x7F0  |  Instance 0-4 (one block per spacecraft)
+# ##############################################################################
+
+TELEMETRY NSNS SIM_SPACECRAFT_STATE_NSNS_1 BIG_ENDIAN "Simulated spacecraft truth state packet -- nsns_1, APID instance 0."
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      4081         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      0            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: rate set by exc.scheduleTelemetry() in the sim script  priority=NORMAL  instance=0
+  APPEND_ITEM       pos_sc_pci_0                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_1                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_2                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       vel_sc_pci_0                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_1                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_2                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       quat_sc_pci_0                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_1                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_2                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_3                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       altitude_detic                32        FLOAT     "Geodetic altitude wrt the planet ellipsoid."
+    UNITS meters m
+  APPEND_ITEM       total_power_in                32        FLOAT     "Total power input from all registered sources."
+    UNITS watts W
+  APPEND_ITEM       total_power_out               32        FLOAT     "Total power draw from all registered loads."
+    UNITS watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY NSNS SIM_SPACECRAFT_STATE_NSNS_2 BIG_ENDIAN "Simulated spacecraft truth state packet -- nsns_2, APID instance 1."
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      4081         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      1            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: rate set by exc.scheduleTelemetry() in the sim script  priority=NORMAL  instance=1
+  APPEND_ITEM       pos_sc_pci_0                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_1                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_2                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       vel_sc_pci_0                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_1                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_2                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       quat_sc_pci_0                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_1                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_2                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_3                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       altitude_detic                32        FLOAT     "Geodetic altitude wrt the planet ellipsoid."
+    UNITS meters m
+  APPEND_ITEM       total_power_in                32        FLOAT     "Total power input from all registered sources."
+    UNITS watts W
+  APPEND_ITEM       total_power_out               32        FLOAT     "Total power draw from all registered loads."
+    UNITS watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY NSNS SIM_SPACECRAFT_STATE_NSNS_3 BIG_ENDIAN "Simulated spacecraft truth state packet -- nsns_3, APID instance 2."
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      4081         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      2            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: rate set by exc.scheduleTelemetry() in the sim script  priority=NORMAL  instance=2
+  APPEND_ITEM       pos_sc_pci_0                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_1                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_2                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       vel_sc_pci_0                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_1                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_2                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       quat_sc_pci_0                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_1                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_2                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_3                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       altitude_detic                32        FLOAT     "Geodetic altitude wrt the planet ellipsoid."
+    UNITS meters m
+  APPEND_ITEM       total_power_in                32        FLOAT     "Total power input from all registered sources."
+    UNITS watts W
+  APPEND_ITEM       total_power_out               32        FLOAT     "Total power draw from all registered loads."
+    UNITS watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY NSNS SIM_SPACECRAFT_STATE_NSNS_4 BIG_ENDIAN "Simulated spacecraft truth state packet -- nsns_4, APID instance 3."
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      4081         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      3            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: rate set by exc.scheduleTelemetry() in the sim script  priority=NORMAL  instance=3
+  APPEND_ITEM       pos_sc_pci_0                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_1                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_2                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       vel_sc_pci_0                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_1                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_2                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       quat_sc_pci_0                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_1                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_2                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_3                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       altitude_detic                32        FLOAT     "Geodetic altitude wrt the planet ellipsoid."
+    UNITS meters m
+  APPEND_ITEM       total_power_in                32        FLOAT     "Total power input from all registered sources."
+    UNITS watts W
+  APPEND_ITEM       total_power_out               32        FLOAT     "Total power draw from all registered loads."
+    UNITS watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY NSNS SIM_SPACECRAFT_STATE_NSNS_5 BIG_ENDIAN "Simulated spacecraft truth state packet -- nsns_5, APID instance 4."
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      4081         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      4            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: rate set by exc.scheduleTelemetry() in the sim script  priority=NORMAL  instance=4
+  APPEND_ITEM       pos_sc_pci_0                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_1                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       pos_sc_pci_2                  64        FLOAT     "Position wrt planet centered inertial frame."
+    UNITS meters m
+  APPEND_ITEM       vel_sc_pci_0                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_1                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       vel_sc_pci_2                  32        FLOAT     "Velocity wrt planet centered inertial frame."
+    UNITS meters/second m/s
+  APPEND_ITEM       quat_sc_pci_0                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_1                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_2                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       quat_sc_pci_3                 32        FLOAT     "Attitude quaternion wrt planet inertial frame."
+  APPEND_ITEM       altitude_detic                32        FLOAT     "Geodetic altitude wrt the planet ellipsoid."
+    UNITS meters m
+  APPEND_ITEM       total_power_in                32        FLOAT     "Total power input from all registered sources."
+    UNITS watts W
+  APPEND_ITEM       total_power_out               32        FLOAT     "Total power draw from all registered loads."
+    UNITS watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"

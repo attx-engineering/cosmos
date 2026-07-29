@@ -343,8 +343,8 @@ class CosmosUpdateCmdTlm:
     Generate COSMOS cmd.txt and tlm.txt from a warplink cmd_tlm.json.
 
     Also sets up the full target directory by copying target.txt and lib/
-    from targets/common/ into targets/<cosmos_target>/, and updates the
-    VARIABLE target_name line in plugin.txt.
+    from targets/common/ into targets/<cosmos_target>/, and checks that
+    plugin.txt declares a TARGET block for the generated target.
 
     Parameters
     ----------
@@ -361,8 +361,8 @@ class CosmosUpdateCmdTlm:
         Path to the targets/common/ folder containing the shared target.txt
         and lib/.  Defaults to <target_dir>/common.  Skipped if absent.
     plugin_txt : str | Path | None
-        Path to plugin.txt.  The VARIABLE target_name line is updated to
-        the new cosmos_target value.  Defaults to <target_dir>/../plugin.txt.
+        Path to plugin.txt.  Checked for a TARGET block matching the
+        cosmos_target value.  Defaults to <target_dir>/../plugin.txt.
     """
 
     def __init__(
@@ -426,25 +426,31 @@ class CosmosUpdateCmdTlm:
             shutil.copytree(src_lib, dst_lib, dirs_exist_ok=True)
             print(f"Copied       : {dst_lib}/")
 
-    def _update_plugin_txt(self) -> None:
+    def _check_plugin_txt(self) -> None:
         """
-        Update the VARIABLE warplink_target line in plugin.txt to the current
-        cosmos_target value.  Leaves the file unchanged if the line is
-        already correct or if plugin.txt doesn't exist.
+        Warn if plugin.txt has no TARGET block for the generated target.
+
+        plugin.txt declares one TARGET + INTERFACE block per build target, each
+        on its own ports.  Generating a target the plugin never declares would
+        ship cmd/tlm definitions that COSMOS silently ignores, so say so loudly
+        rather than failing at install time.
         """
         if not self._plugin_txt.exists():
             return
 
-        content = self._plugin_txt.read_text()
-        updated = re.sub(
-            r'^(VARIABLE\s+warplink_target\s+)\S+',
-            rf'\g<1>{self._target}',
-            content,
+        declared = re.search(
+            rf'^\s*TARGET\s+{re.escape(self._target)}\s',
+            self._plugin_txt.read_text(),
             flags=re.MULTILINE,
         )
-        if updated != content:
-            self._plugin_txt.write_text(updated)
-            print(f"Updated      : {self._plugin_txt}  (target_name → {self._target})")
+        if declared:
+            print(f"Declared     : TARGET {self._target} found in {self._plugin_txt}")
+        else:
+            print(
+                f"WARNING      : no 'TARGET {self._target}' block in {self._plugin_txt}.\n"
+                f"               Copy an existing block and change the target name,\n"
+                f"               interface name, and ports, or the target will not load."
+            )
 
     # ------------------------------------------------------------------
 
@@ -483,7 +489,7 @@ class CosmosUpdateCmdTlm:
         self._out_dir.mkdir(parents=True, exist_ok=True)
         (self._out_dir / "tlm.txt").write_text(tlm_str)
         (self._out_dir / "cmd.txt").write_text(cmd_str)
-        self._update_plugin_txt()
+        self._check_plugin_txt()
 
         print(f"COSMOS target : {self._target}")
         print(f"Written       : {self._out_dir / 'tlm.txt'}")
