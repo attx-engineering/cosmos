@@ -1,4 +1,2 @@
 node_modules
 openc3-cosmos-warplink-*
-**/cmd.*
-**/tlm.*
