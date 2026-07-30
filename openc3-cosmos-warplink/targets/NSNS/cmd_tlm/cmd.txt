@@ -241,3 +241,35 @@ COMMAND NSNS GNC_PD_ATT_CTRL_SET_DEADBAND BIG_ENDIAN "Change the deadband of the
     UNITS radians/second rad/s
   APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
 
+# ##############################################################################
+# Simulation Interface (SIM_INTERFACE)
+# Downlinks simulated spacecraft and ADCS state and accepts ground commands that retarget and re-mode the ADCS. One instance per spacecraft, differentiated by APID instance.
+# Base APID: 0x070  |  5 Instances
+# ##############################################################################
+
+COMMAND NSNS SIM_INTERFACE_CHANGE_POINTING_TARGET BIG_ENDIAN "The command to change the primary pointing target of the ADCS"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6259      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  target                        8         UINT      MIN       MAX       0         "Body to aim the ADCS primary body constraint at: 0 = Earth, 1 = Moon, 2 = Sun. Rejected if the selected body's frame input was never wired."
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
+COMMAND NSNS SIM_INTERFACE_ADCS_MODE BIG_ENDIAN "Command to change the mode of the ADCS"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6260      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  mode                          8         UINT      MIN       MAX       0         "ADCS mode to command: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Any other value is rejected."
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
