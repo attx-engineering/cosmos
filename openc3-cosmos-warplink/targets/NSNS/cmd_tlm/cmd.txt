@@ -275,7 +275,7 @@ COMMAND NSNS SIM_INTERFACE_ADCS_MODE BIG_ENDIAN "Command to change the mode of t
 
 # ##############################################################################
 # IMU IM Demo (IMU_IM_DEMO)
-# Base APID: 0x080  |  Instance
+# Base APID: 0x080  |  5 Instances
 # ##############################################################################
 
 COMMAND NSNS IMU_IM_DEMO_RESET BIG_ENDIAN "Ability to reset the IMU itself"

@@ -1005,6 +1005,22 @@
                 {
                     "instance": 0,
                     "scheduled_rate_hz": 10
+                },
+                {
+                    "instance": 1,
+                    "scheduled_rate_hz": 10
+                },
+                {
+                    "instance": 2,
+                    "scheduled_rate_hz": 10
+                },
+                {
+                    "instance": 3,
+                    "scheduled_rate_hz": 10
+                },
+                {
+                    "instance": 4,
+                    "scheduled_rate_hz": 10
                 }
             ],
             "telemetry": [
@@ -1016,6 +1032,26 @@
                     "registrations": [
                         {
                             "instance": 0,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 1,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 2,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 3,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 4,
                             "rate_sec": 0.5,
                             "priority": "NORMAL"
                         }
