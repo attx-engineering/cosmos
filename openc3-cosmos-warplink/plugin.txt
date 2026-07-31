@@ -27,7 +27,6 @@ VARIABLE warp_cube_read_port   5005
 # NSNS
 # ---------------------------------------------------------------------------
 VARIABLE nsns_enable           true
-VARIABLE nsns_host             10.1.4.27
 VARIABLE nsns_write_port       5008
 VARIABLE nsns_read_port        5007
 
@@ -50,7 +49,7 @@ TARGET NSNS NSNS
 # Uncomment the line that matches your hardware connection
 #INTERFACE NSNS_INT openc3/interfaces/serial_interface.py /dev/ttyUSB1 /dev/ttyUSB1 115200 NONE 1 10.0 None # Serial to Linux
 #INTERFACE NSNS_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal <%= nsns_write_port %> <%= nsns_read_port %> 10.0 None # Docker routing to Windows bridge
-INTERFACE NSNS_INT openc3/interfaces/udp_interface.py <%= nsns_host %> <%= nsns_write_port %> <%= nsns_read_port %> None None 128 10.0 None # RasPi UDP
+INTERFACE NSNS_INT openc3/interfaces/udp_interface.py host.docker.internal <%= nsns_write_port %> <%= nsns_read_port %> None None 128 10.0 None # RasPi UDP
   PROTOCOL WRITE openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
   PROTOCOL READ check_pattern.py
   PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
