@@ -674,11 +674,50 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_4 BIG_ENDIAN "All of the data from the AD
   APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
+    LIMITS DEFAULT 1 ENABLED 1.0 1.5 5.5 6.0 2.0 5.0
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_1               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_2               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+# ##############################################################################
+# IMU IM Demo (IMU_IM_DEMO)
+# Base APID: 0x080  |  Instance
+# ##############################################################################
+
+TELEMETRY NSNS IMU_IM_DEMO_IMU_MEASUREMENT BIG_ENDIAN "In between measurement for the IMU model and an actual IMU"
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      2177         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      0            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: 0.5 s  priority=NORMAL  instance=0
+  APPEND_ITEM       acceleration_0                16        UINT      "Acceleration xyz of the IMU"
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       acceleration_1                16        UINT      "Acceleration xyz of the IMU"
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       acceleration_2                16        UINT      "Acceleration xyz of the IMU"
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       gyro_rate_0                   16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS degrees/second deg/s
+  APPEND_ITEM       gyro_rate_1                   16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS degrees/second deg/s
+  APPEND_ITEM       gyro_rate_2                   16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS degrees/second deg/s
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
 
