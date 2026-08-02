@@ -1054,7 +1054,33 @@
                     "apid": 177,
                     "apid_macro": "TLM_ADCS_IM_DEMO_ADCS_STATUS",
                     "description": "Status of the active ADCS",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 1,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 2,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 3,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        },
+                        {
+                            "instance": 4,
+                            "rate_sec": 0.5,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "RW_SPEED_0",

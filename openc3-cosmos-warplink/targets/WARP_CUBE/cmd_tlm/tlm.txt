@@ -253,3 +253,303 @@ TELEMETRY WARP_CUBE LED_BLINKER_COUNT BIG_ENDIAN "LED Blinker count packet."
   APPEND_ITEM       blink_count                   32        UINT      "Rolling count of LED blinks."
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
 
+# ##############################################################################
+# ADCS IM Demo (ADCS_IM_DEMO)
+# Base APID: 0x0B0  |  5 Instances
+# ##############################################################################
+
+TELEMETRY WARP_CUBE ADCS_IM_DEMO_ADCS_STATUS_0 BIG_ENDIAN "Status of the active ADCS (instance 0)"
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      2225         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      0            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: 0.5 s  priority=NORMAL  instance=0
+  APPEND_ITEM       RW_SPEED_0                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_1                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_2                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_3                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_0                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_1                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_2                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_3                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_0                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_1                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_2                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_3                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       MODE                          8         UINT      ""
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       POWER_DRAW                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM       POINTING_TARGET               16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY WARP_CUBE ADCS_IM_DEMO_ADCS_STATUS_1 BIG_ENDIAN "Status of the active ADCS (instance 1)"
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      2225         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      1            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: 0.5 s  priority=NORMAL  instance=1
+  APPEND_ITEM       RW_SPEED_0                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_1                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_2                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_3                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_0                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_1                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_2                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_3                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_0                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_1                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_2                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_3                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       MODE                          8         UINT      ""
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       POWER_DRAW                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM       POINTING_TARGET               16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY WARP_CUBE ADCS_IM_DEMO_ADCS_STATUS_2 BIG_ENDIAN "Status of the active ADCS (instance 2)"
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      2225         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      2            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: 0.5 s  priority=NORMAL  instance=2
+  APPEND_ITEM       RW_SPEED_0                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_1                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_2                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_3                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_0                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_1                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_2                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_3                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_0                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_1                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_2                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_3                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       MODE                          8         UINT      ""
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       POWER_DRAW                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM       POINTING_TARGET               16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY WARP_CUBE ADCS_IM_DEMO_ADCS_STATUS_3 BIG_ENDIAN "Status of the active ADCS (instance 3)"
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      2225         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      3            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: 0.5 s  priority=NORMAL  instance=3
+  APPEND_ITEM       RW_SPEED_0                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_1                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_2                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_3                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_0                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_1                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_2                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_3                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_0                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_1                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_2                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_3                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       MODE                          8         UINT      ""
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       POWER_DRAW                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM       POINTING_TARGET               16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
+TELEMETRY WARP_CUBE ADCS_IM_DEMO_ADCS_STATUS_4 BIG_ENDIAN "Status of the active ADCS (instance 4)"
+  # Keyword        Name                          BitSize   Type      ID           Description
+  APPEND_ID_ITEM   STREAM_ID                     16        UINT      2225         "Stream ID"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      SEQUENCE                      16        UINT                   "Packet Sequence"
+    FORMAT_STRING "0x%04X"
+  APPEND_ITEM      PKT_LEN                       16        UINT                   "Length of the packet"
+  APPEND_ITEM      SEC_HDR1                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR2                      16        UINT                   " "
+  APPEND_ITEM      SEC_HDR3                      16        UINT                   " "
+  APPEND_ID_ITEM   APID_INSTANCE                 8         UINT      4            "Instance of APID sending packet"
+  APPEND_ITEM      FILLER                        8         UINT                   "Filler Value, 0xBB"
+  # Downlink: 0.5 s  priority=NORMAL  instance=4
+  APPEND_ITEM       RW_SPEED_0                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_1                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_2                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SPEED_3                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_0                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_1                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_2                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_MOMENTUM_3                 16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_0                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_1                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_2                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       RW_SAT_3                      16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       MODE                          8         UINT      ""
+    UNITS meters/second^2 m/s^2
+  APPEND_ITEM       POWER_DRAW                    16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM       POINTING_TARGET               16        UINT      ""
+    READ_CONVERSION half_float_conversion.py
+    UNITS Watts W
+  APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
+
