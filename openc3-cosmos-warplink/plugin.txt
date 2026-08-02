@@ -19,7 +19,7 @@
 # WARP_CUBE
 # ---------------------------------------------------------------------------
 VARIABLE warp_cube_enable      true
-VARIABLE warp_cube_host        10.1.4.27
+VARIABLE warp_cube_host        172.20.10.4
 VARIABLE warp_cube_write_port  5006
 VARIABLE warp_cube_read_port   5005
 

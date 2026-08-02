@@ -262,14 +262,54 @@ COMMAND WARP_CUBE GNC_INERT_NAV_DEAD_RECKON_SET_NOISE BIG_ENDIAN "Change the EKF
   APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
 
 # ##############################################################################
+# PD Attitude Control (GNC_PD_ATT_CTRL)
+# PD attitude controller for spacecraft attitude stabilization.
+# Base APID: 0x080  |  Instance
+# ##############################################################################
+
+COMMAND WARP_CUBE GNC_PD_ATT_CTRL_CHANGE_GAIN BIG_ENDIAN "Change the gain parameters of the PD attitude controller."
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6274      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       22        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  P_0                           16        UINT      MIN       MAX       0         "The proportional gain for the controller."
+  APPEND_PARAMETER  P_1                           16        UINT      MIN       MAX       0         "The proportional gain for the controller."
+  APPEND_PARAMETER  P_2                           16        UINT      MIN       MAX       0         "The proportional gain for the controller."
+  APPEND_PARAMETER  K_0                           16        UINT      MIN       MAX       0         "The derivative gain for the controller."
+  APPEND_PARAMETER  K_1                           16        UINT      MIN       MAX       0         "The derivative gain for the controller."
+  APPEND_PARAMETER  K_2                           16        UINT      MIN       MAX       0         "The derivative gain for the controller."
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
+COMMAND WARP_CUBE GNC_PD_ATT_CTRL_SET_DEADBAND BIG_ENDIAN "Change the deadband of the PD attitude controller."
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6275      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       18        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  att_deadband_rad              32        FLOAT     MIN       MAX       0         "The attitude deadband for the PD attitude controller."
+    UNITS radians rad
+  APPEND_PARAMETER  rate_deadband_rad_s           32        FLOAT     MIN       MAX       0         "The rate deadband for the PD attitude controller."
+    UNITS radians/second rad/s
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
+# ##############################################################################
 # LED Blinker (LED_BLINKER)
 # LED blinking demonstration app.
-# Base APID: 0x080  |  2 Instances
+# Base APID: 0x090  |  Instance
 # ##############################################################################
 
 COMMAND WARP_CUBE LED_BLINKER_CHANGE_FREQUENCY BIG_ENDIAN "Change the LED blinker frequency."
   # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
-  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6274      "Stream ID"
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6290      "Stream ID"
   APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
   APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
   APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
@@ -279,5 +319,25 @@ COMMAND WARP_CUBE LED_BLINKER_CHANGE_FREQUENCY BIG_ENDIAN "Change the LED blinke
   APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
   APPEND_PARAMETER  frequency                     8         UINT      MIN       MAX       0         "The updated frequency for the LED blinking."
     UNITS Hertz Hz
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
+# ##############################################################################
+# ADCS IM Demo (ADCS_IM_DEMO)
+# Base APID: 0x0B0  |  5 Instances
+# ##############################################################################
+
+COMMAND WARP_CUBE ADCS_IM_DEMO_RESET BIG_ENDIAN "Ability to reset the ADCS itself"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6322      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  reset                         8         UINT      MIN       MAX       0         "Ability to reset the ADCS. True = reset"
+    STATE FALSE 0
+    STATE TRUE 1
   APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
 
