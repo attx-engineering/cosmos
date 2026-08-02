@@ -140,7 +140,7 @@
             "instances": [
                 {
                     "instance": 0,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 10
                 }
             ],
             "telemetry": [
@@ -267,7 +267,7 @@
             "instances": [
                 {
                     "instance": 0,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 10
                 }
             ],
             "telemetry": [
@@ -777,23 +777,23 @@
             "instances": [
                 {
                     "instance": 0,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 5
                 },
                 {
                     "instance": 1,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 5
                 },
                 {
                     "instance": 2,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 5
                 },
                 {
                     "instance": 3,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 5
                 },
                 {
                     "instance": 4,
-                    "scheduled_rate_hz": 0
+                    "scheduled_rate_hz": 5
                 }
             ],
             "telemetry": [
@@ -992,101 +992,19 @@
                             "description": "ADCS mode to command: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Any other value is rejected."
                         }
                     ]
-                }
-            ]
-        },
-        {
-            "name": "IMU IM Demo",
-            "short_name": "IMU_IM_DEMO",
-            "app_file": "apps/hardware/IMU_IM_Demo",
-            "description": "",
-            "apid_base": 128,
-            "instances": [
-                {
-                    "instance": 0,
-                    "scheduled_rate_hz": 10
                 },
-                {
-                    "instance": 1,
-                    "scheduled_rate_hz": 10
-                },
-                {
-                    "instance": 2,
-                    "scheduled_rate_hz": 10
-                },
-                {
-                    "instance": 3,
-                    "scheduled_rate_hz": 10
-                },
-                {
-                    "instance": 4,
-                    "scheduled_rate_hz": 10
-                }
-            ],
-            "telemetry": [
-                {
-                    "name": "IMU_MEASUREMENT",
-                    "apid": 129,
-                    "apid_macro": "TLM_IMU_IM_DEMO_IMU_MEASUREMENT",
-                    "description": "In between measurement for the IMU model and an actual IMU",
-                    "registrations": [
-                        {
-                            "instance": 0,
-                            "rate_sec": 0.5,
-                            "priority": "NORMAL"
-                        },
-                        {
-                            "instance": 1,
-                            "rate_sec": 0.5,
-                            "priority": "NORMAL"
-                        },
-                        {
-                            "instance": 2,
-                            "rate_sec": 0.5,
-                            "priority": "NORMAL"
-                        },
-                        {
-                            "instance": 3,
-                            "rate_sec": 0.5,
-                            "priority": "NORMAL"
-                        },
-                        {
-                            "instance": 4,
-                            "rate_sec": 0.5,
-                            "priority": "NORMAL"
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "id": "acceleration",
-                            "type": "float16",
-                            "array_length": 3,
-                            "description": "Acceleration xyz of the IMU",
-                            "units": "m/s^2"
-                        },
-                        {
-                            "id": "gyro_rate",
-                            "type": "float16",
-                            "array_length": 3,
-                            "description": "",
-                            "units": "deg/s"
-                        }
-                    ]
-                }
-            ],
-            "commands": [
                 {
                     "name": "RESET",
-                    "apid": 130,
-                    "apid_macro": "CMD_IMU_IM_DEMO_RESET",
-                    "description": "Ability to reset the IMU itself",
+                    "apid": 117,
+                    "apid_macro": "CMD_SIM_INTERFACE_RESET",
+                    "description": "Resetting an ADCS",
                     "size": 1,
                     "fields": [
                         {
                             "id": "reset",
                             "type": "bool",
                             "array_length": 0,
-                            "description": "Ability to reset the IMU. True = reset"
+                            "description": ""
                         }
                     ]
                 }
