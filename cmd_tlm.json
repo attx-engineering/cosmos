@@ -1,7 +1,7 @@
 {
-    "build_name": "WarpCube",
+    "build_name": "NSNS",
     "schema_version": 2,
-    "cosmos_target": "WARP_CUBE",
+    "cosmos_target": "NSNS",
     "apps": [
         {
             "name": "Flight Executive",
@@ -149,7 +149,13 @@
                     "apid": 17,
                     "apid_macro": "TLM_TELEMETRY_MANAGER_STATUS",
                     "description": "Telemetry manager status packet.",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "successful_packets",
@@ -270,7 +276,13 @@
                     "apid": 33,
                     "apid_macro": "TLM_COMMAND_MANAGER_STATUS",
                     "description": "Command Manager status packet.",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "exc_error_count",
@@ -309,7 +321,13 @@
                     "apid": 34,
                     "apid_macro": "TLM_COMMAND_MANAGER_ERROR",
                     "description": "Command Manager error packet.",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "error_code",
@@ -521,7 +539,7 @@
             "instances": [
                 {
                     "instance": 0,
-                    "scheduled_rate_hz": 1
+                    "scheduled_rate_hz": 0
                 }
             ],
             "telemetry": [
@@ -530,7 +548,13 @@
                     "apid": 65,
                     "apid_macro": "TLM_OCOMM_MANAGER_STATUS",
                     "description": "Onboard communications (CSP) manager status packet reporting rolling bus health counters.",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "successful_rx",
@@ -605,245 +629,11 @@
             ]
         },
         {
-            "name": "ICM 20948",
-            "short_name": "ICM_20948",
-            "app_file": "apps/hardware/ICM_20948",
-            "description": "",
-            "apid_base": 80,
-            "instances": [
-                {
-                    "instance": 0,
-                    "scheduled_rate_hz": 10
-                }
-            ],
-            "telemetry": [
-                {
-                    "name": "measurement",
-                    "apid": 81,
-                    "apid_macro": "TLM_ICM_20948_measurement",
-                    "description": "ICM-20948 IMU measurement packet definition",
-                    "registrations": [
-                        {
-                            "instance": 0,
-                            "rate_sec": 0.01,
-                            "priority": "NORMAL"
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "id": "acceleration_x",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "m/s^2"
-                        },
-                        {
-                            "id": "acceleration_y",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "m/s^2"
-                        },
-                        {
-                            "id": "acceleration_z",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "m/s^2"
-                        },
-                        {
-                            "id": "gyro_rate_x",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "deg/s"
-                        },
-                        {
-                            "id": "gyro_rate_y",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "deg/s"
-                        },
-                        {
-                            "id": "gyro_rate_z",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "deg/s"
-                        },
-                        {
-                            "id": "magnetic_x",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "microteslas"
-                        },
-                        {
-                            "id": "magnetic_y",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "microteslas"
-                        },
-                        {
-                            "id": "magnetic_z",
-                            "type": "float16",
-                            "array_length": 0,
-                            "description": "",
-                            "units": "microteslas"
-                        }
-                    ]
-                }
-            ],
-            "commands": []
-        },
-        {
-            "name": "Inertial Navigation Magnetometer Measurement Update",
-            "short_name": "GNC_INERT_NAV_MAG_UPDATE",
-            "app_file": "apps/gnc/InertialNavigationEKF/InerNavEkfMagUpdate",
-            "description": "Inertial Navigation EKF magnetometer measurement update step.",
-            "apid_base": 96,
-            "instances": [
-                {
-                    "instance": 0,
-                    "scheduled_rate_hz": 10
-                }
-            ],
-            "telemetry": [
-                {
-                    "name": "STATE",
-                    "apid": 97,
-                    "apid_macro": "TLM_GNC_INERT_NAV_MAG_UPDATE_STATE",
-                    "description": "State after a successful magnetometer measurement update step.",
-                    "registrations": [
-                        {
-                            "instance": 0,
-                            "rate_sec": 1.0,
-                            "priority": "NORMAL"
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "id": "state_vector",
-                            "type": "float16",
-                            "array_length": 10,
-                            "description": "10 element state vector [pos vel quat ang_vel_bias accel_bias]."
-                        },
-                        {
-                            "id": "state_cov",
-                            "type": "float16",
-                            "array_length": 10,
-                            "description": "10 diagonal covariance matrix elements corresponding to states in state_vector."
-                        },
-                        {
-                            "id": "meas_process_status",
-                            "type": "int8",
-                            "array_length": 0,
-                            "description": "Status of measurement processing (0=success, 1=invalid input, 2=time rejected, 3=residual rejected)."
-                        }
-                    ]
-                }
-            ],
-            "commands": [
-                {
-                    "name": "SET_NOISE",
-                    "apid": 98,
-                    "apid_macro": "CMD_GNC_INERT_NAV_MAG_UPDATE_SET_NOISE",
-                    "description": "Change the magnetometer measurement noise standard deviation.",
-                    "size": 12,
-                    "fields": [
-                        {
-                            "id": "mag_std",
-                            "type": "float32",
-                            "array_length": 3,
-                            "description": "Magnetic field vector measurement standard deviation resolved in magnetometer frame.",
-                            "units": "nT"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "Inertial Navigation Dead Reckon",
-            "short_name": "GNC_INERT_NAV_DEAD_RECKON",
-            "app_file": "apps/gnc/InertialNavigationEKF/InerNavEkfDeadReckon",
-            "description": "Inertial Navigation EKF dead reckon propagation step.",
-            "apid_base": 112,
-            "instances": [
-                {
-                    "instance": 0,
-                    "scheduled_rate_hz": 10
-                }
-            ],
-            "telemetry": [
-                {
-                    "name": "PROP_STATE",
-                    "apid": 113,
-                    "apid_macro": "TLM_GNC_INERT_NAV_DEAD_RECKON_PROP_STATE",
-                    "description": "State after a successful EKF propagation step.",
-                    "registrations": [
-                        {
-                            "instance": 0,
-                            "rate_sec": 0.1,
-                            "priority": "NORMAL"
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "id": "state_vector",
-                            "type": "float16",
-                            "array_length": 10,
-                            "description": "10 element state vector [pos vel quat ang_vel_bias accel_bias]."
-                        },
-                        {
-                            "id": "state_cov",
-                            "type": "float16",
-                            "array_length": 10,
-                            "description": "10 diagonal covariance matrix elements corresponding to states in state_vector."
-                        }
-                    ]
-                }
-            ],
-            "commands": [
-                {
-                    "name": "SET_NOISE",
-                    "apid": 114,
-                    "apid_macro": "CMD_GNC_INERT_NAV_DEAD_RECKON_SET_NOISE",
-                    "description": "Change the EKF propagation step process noise standard deviations.",
-                    "size": 36,
-                    "fields": [
-                        {
-                            "id": "dynamics_noise",
-                            "type": "float32",
-                            "array_length": 3,
-                            "description": "Noise due to dynamics applied to velocity.",
-                            "units": "sqrt(Hz)"
-                        },
-                        {
-                            "id": "accel_noise",
-                            "type": "float32",
-                            "array_length": 3,
-                            "description": "Noise due to accelerometer applied to velocity.",
-                            "units": "sqrt(Hz)"
-                        },
-                        {
-                            "id": "gyro_noise",
-                            "type": "float32",
-                            "array_length": 3,
-                            "description": "Noise due to gyro inflated and applied to attitude.",
-                            "units": "sqrt(Hz)"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "name": "PD Attitude Control",
             "short_name": "GNC_PD_ATT_CTRL",
             "app_file": "apps/gnc/PdAttitudeControl",
             "description": "PD attitude controller for spacecraft attitude stabilization.",
-            "apid_base": 128,
+            "apid_base": 80,
             "instances": [
                 {
                     "instance": 0,
@@ -853,10 +643,16 @@
             "telemetry": [
                 {
                     "name": "DATA",
-                    "apid": 129,
+                    "apid": 81,
                     "apid_macro": "TLM_GNC_PD_ATT_CTRL_DATA",
                     "description": "PD control output packet.",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "att_err_rad",
@@ -891,7 +687,7 @@
             "commands": [
                 {
                     "name": "CHANGE_GAIN",
-                    "apid": 130,
+                    "apid": 82,
                     "apid_macro": "CMD_GNC_PD_ATT_CTRL_CHANGE_GAIN",
                     "description": "Change the gain parameters of the PD attitude controller.",
                     "size": 12,
@@ -912,7 +708,7 @@
                 },
                 {
                     "name": "SET_DEADBAND",
-                    "apid": 131,
+                    "apid": 83,
                     "apid_macro": "CMD_GNC_PD_ATT_CTRL_SET_DEADBAND",
                     "description": "Change the deadband of the PD attitude controller.",
                     "size": 8,
@@ -936,65 +732,11 @@
             ]
         },
         {
-            "name": "LED Blinker",
-            "short_name": "LED_BLINKER",
-            "app_file": "apps/hardware/LedBlinker",
-            "description": "LED blinking demonstration app.",
-            "apid_base": 144,
-            "instances": [
-                {
-                    "instance": 1,
-                    "scheduled_rate_hz": 1
-                }
-            ],
-            "telemetry": [
-                {
-                    "name": "COUNT",
-                    "apid": 145,
-                    "apid_macro": "TLM_LED_BLINKER_COUNT",
-                    "description": "LED Blinker count packet.",
-                    "registrations": [
-                        {
-                            "instance": 1,
-                            "rate_sec": 1.0,
-                            "priority": "NORMAL"
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "id": "blink_count",
-                            "type": "uint32",
-                            "array_length": 0,
-                            "description": "Rolling count of LED blinks."
-                        }
-                    ]
-                }
-            ],
-            "commands": [
-                {
-                    "name": "CHANGE_FREQUENCY",
-                    "apid": 146,
-                    "apid_macro": "CMD_LED_BLINKER_CHANGE_FREQUENCY",
-                    "description": "Change the LED blinker frequency.",
-                    "size": 1,
-                    "fields": [
-                        {
-                            "id": "frequency",
-                            "type": "uint8",
-                            "array_length": 0,
-                            "description": "The updated frequency for the LED blinking.",
-                            "units": "Hz"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "name": "Two Axis Pointing Guidance",
             "short_name": "GNC_TWO_AXIS_PNT",
             "app_file": "apps/gnc/TwoAxisPointingGuidance",
             "description": "Two-axis pointing guidance algorithm.",
-            "apid_base": 160,
+            "apid_base": 96,
             "instances": [
                 {
                     "instance": 0,
@@ -1004,10 +746,16 @@
             "telemetry": [
                 {
                     "name": "DATA",
-                    "apid": 161,
+                    "apid": 97,
                     "apid_macro": "TLM_GNC_TWO_AXIS_PNT_DATA",
                     "description": "Two axis pointing guidance output packet.",
-                    "registrations": [],
+                    "registrations": [
+                        {
+                            "instance": 0,
+                            "rate_sec": 1.0,
+                            "priority": "NORMAL"
+                        }
+                    ],
                     "fields": [
                         {
                             "id": "quat_body_ref",
@@ -1025,7 +773,7 @@
             "short_name": "SIM_INTERFACE",
             "app_file": "apps/SimInterface",
             "description": "Downlinks simulated spacecraft and ADCS state and accepts ground commands that retarget and re-mode the ADCS. One instance per spacecraft, differentiated by APID instance.",
-            "apid_base": 176,
+            "apid_base": 112,
             "instances": [
                 {
                     "instance": 0,
@@ -1051,7 +799,7 @@
             "telemetry": [
                 {
                     "name": "SC_DATA",
-                    "apid": 177,
+                    "apid": 113,
                     "apid_macro": "TLM_SIM_INTERFACE_SC_DATA",
                     "description": "All the telemetry related to the spacecraft",
                     "registrations": [
@@ -1134,7 +882,7 @@
                 },
                 {
                     "name": "ADCS_DATA",
-                    "apid": 178,
+                    "apid": 114,
                     "apid_macro": "TLM_SIM_INTERFACE_ADCS_DATA",
                     "description": "All of the data from the ADCS",
                     "registrations": [
@@ -1217,7 +965,7 @@
             "commands": [
                 {
                     "name": "CHANGE_POINTING_TARGET",
-                    "apid": 179,
+                    "apid": 115,
                     "apid_macro": "CMD_SIM_INTERFACE_CHANGE_POINTING_TARGET",
                     "description": "The command to change the primary pointing target of the ADCS",
                     "size": 1,
@@ -1232,7 +980,7 @@
                 },
                 {
                     "name": "ADCS_MODE",
-                    "apid": 180,
+                    "apid": 116,
                     "apid_macro": "CMD_SIM_INTERFACE_ADCS_MODE",
                     "description": "Command to change the mode of the ADCS",
                     "size": 1,
@@ -1247,7 +995,7 @@
                 },
                 {
                     "name": "RESET",
-                    "apid": 181,
+                    "apid": 117,
                     "apid_macro": "CMD_SIM_INTERFACE_RESET",
                     "description": "Resetting an ADCS",
                     "size": 1,
