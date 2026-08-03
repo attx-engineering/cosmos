@@ -322,13 +322,14 @@ COMMAND WARP_CUBE LED_BLINKER_CHANGE_FREQUENCY BIG_ENDIAN "Change the LED blinke
   APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
 
 # ##############################################################################
-# ADCS IM Demo (ADCS_IM_DEMO)
+# Simulation Interface (SIM_INTERFACE)
+# Downlinks simulated spacecraft and ADCS state and accepts ground commands that retarget and re-mode the ADCS. One instance per spacecraft, differentiated by APID instance.
 # Base APID: 0x0B0  |  5 Instances
 # ##############################################################################
 
-COMMAND WARP_CUBE ADCS_IM_DEMO_RESET BIG_ENDIAN "Ability to reset the ADCS itself"
+COMMAND WARP_CUBE SIM_INTERFACE_CHANGE_POINTING_TARGET BIG_ENDIAN "The command to change the primary pointing target of the ADCS"
   # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
-  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6322      "Stream ID"
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6323      "Stream ID"
   APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
   APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
   APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
@@ -336,7 +337,33 @@ COMMAND WARP_CUBE ADCS_IM_DEMO_RESET BIG_ENDIAN "Ability to reset the ADCS itsel
   APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
   APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
   APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
-  APPEND_PARAMETER  reset                         8         UINT      MIN       MAX       0         "Ability to reset the ADCS. True = reset"
+  APPEND_PARAMETER  target                        8         UINT      MIN       MAX       0         "Body to aim the ADCS primary body constraint at: 0 = Earth, 1 = Moon, 2 = Sun. Rejected if the selected body's frame input was never wired."
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
+COMMAND WARP_CUBE SIM_INTERFACE_ADCS_MODE BIG_ENDIAN "Command to change the mode of the ADCS"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6324      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  mode                          8         UINT      MIN       MAX       0         "ADCS mode to command: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Any other value is rejected."
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
+COMMAND WARP_CUBE SIM_INTERFACE_RESET BIG_ENDIAN "Resetting an ADCS"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6325      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  reset                         8         UINT      MIN       MAX       0         ""
     STATE FALSE 0
     STATE TRUE 1
   APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
