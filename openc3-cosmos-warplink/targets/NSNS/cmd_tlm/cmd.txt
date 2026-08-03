@@ -277,7 +277,7 @@ COMMAND NSNS SIM_INTERFACE_RESET BIG_ENDIAN "Resetting an ADCS"
   # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
   APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6261      "Stream ID"
   APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
-  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       10        "Length of the packet"
   APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
   APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
   APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
