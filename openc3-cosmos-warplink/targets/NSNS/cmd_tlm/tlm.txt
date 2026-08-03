@@ -488,6 +488,7 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_0 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
+    LIMITS DEFAULT 1 ENABLED 65 75 95 105
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_1               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -533,6 +534,7 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_1 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
+    LIMITS DEFAULT 1 ENABLED 65 75 95 105
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_1               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -578,6 +580,7 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_2 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
+    LIMITS DEFAULT 1 ENABLED 65 75 95 105
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_1               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -623,6 +626,7 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_3 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
+    LIMITS DEFAULT 1 ENABLED 65 75 95 105
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_1               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -668,6 +672,7 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_4 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
+    LIMITS DEFAULT 1 ENABLED 65 75 95 105
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_1               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
