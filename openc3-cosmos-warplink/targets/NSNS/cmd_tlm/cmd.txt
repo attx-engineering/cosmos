@@ -273,6 +273,21 @@ COMMAND NSNS SIM_INTERFACE_ADCS_MODE BIG_ENDIAN "Command to change the mode of t
   APPEND_PARAMETER  mode                          8         UINT      MIN       MAX       0         "ADCS mode to command: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Any other value is rejected."
   APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
 
+COMMAND NSNS SIM_INTERFACE_RESET BIG_ENDIAN "Resetting an ADCS"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       6261      "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       11        "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+  APPEND_PARAMETER  reset                         8         UINT      MIN       MAX       0         ""
+    STATE FALSE 0
+    STATE TRUE 1
+  APPEND_PARAMETER CRC                           16        UINT      MIN       MAX       0         "CRC16 Checksum"
+
 COMMAND NSNS CMD_SIM_VALUE BIG_ENDIAN "Command to change any value of the sim"
   # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
   APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       8190      "Stream ID"

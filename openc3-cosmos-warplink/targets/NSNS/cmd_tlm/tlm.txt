@@ -486,12 +486,6 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_0 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       rw_momentum_3                 32        FLOAT     "Momentum stored by each reaction wheel, indexed in ADCS wheel order."
     UNITS N*m*s N*m*s
-  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
-  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -500,6 +494,12 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_0 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_2               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
+  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
+  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
 
 TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_1 BIG_ENDIAN "All of the data from the ADCS (instance 1)"
@@ -531,12 +531,6 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_1 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       rw_momentum_3                 32        FLOAT     "Momentum stored by each reaction wheel, indexed in ADCS wheel order."
     UNITS N*m*s N*m*s
-  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
-  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -545,6 +539,12 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_1 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_2               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
+  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
+  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
 
 TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_2 BIG_ENDIAN "All of the data from the ADCS (instance 2)"
@@ -576,12 +576,6 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_2 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       rw_momentum_3                 32        FLOAT     "Momentum stored by each reaction wheel, indexed in ADCS wheel order."
     UNITS N*m*s N*m*s
-  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
-  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -590,6 +584,12 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_2 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_2               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
+  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
+  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
 
 TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_3 BIG_ENDIAN "All of the data from the ADCS (instance 3)"
@@ -621,12 +621,6 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_3 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       rw_momentum_3                 32        FLOAT     "Momentum stored by each reaction wheel, indexed in ADCS wheel order."
     UNITS N*m*s N*m*s
-  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
-  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -635,6 +629,12 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_3 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_2               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
+  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
+  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
 
 TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_4 BIG_ENDIAN "All of the data from the ADCS (instance 4)"
@@ -666,12 +666,6 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_4 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       rw_momentum_3                 32        FLOAT     "Momentum stored by each reaction wheel, indexed in ADCS wheel order."
     UNITS N*m*s N*m*s
-  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
-  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
-  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM       adcs_power_draw               32        FLOAT     "Total power drawn by the ADCS reaction wheels and torque rods."
     UNITS Watts W
   APPEND_ITEM       total_ang_mom_0               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
@@ -680,5 +674,10 @@ TELEMETRY NSNS SIM_INTERFACE_ADCS_DATA_4 BIG_ENDIAN "All of the data from the AD
     UNITS N*m*s N*m*s
   APPEND_ITEM       total_ang_mom_2               32        FLOAT     "Total system angular momentum in the body frame: spacecraft body momentum plus momentum stored in every reaction wheel."
     UNITS N*m*s N*m*s
+  APPEND_ITEM       rw_saturated_0                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_1                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_2                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       rw_saturated_3                8         UINT      "Saturation flag for each reaction wheel, indexed in ADCS wheel order."
+  APPEND_ITEM       adcs_mode                     8         UINT      "Active ADCS mode: 0 = detumble, 1 = nominal operations, 2 = fine pointing. Read back from the mode output, so an ADCS auto-demotion out of fine pointing shows up here."
+  APPEND_ITEM       pointing_target               8         UINT      "Body the ADCS primary constraint is currently aimed at: 0 = Earth, 1 = Moon, 2 = Sun."
   APPEND_ITEM      CRC                           16        UINT      "CRC16 checksum"
-
