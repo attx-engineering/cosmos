@@ -12,6 +12,17 @@
 # 5 is a number, 5.5 is a number, true is a boolean, and anything that is not
 # valid JSON is sent as a string.
 #
+# What the simulation accepts (this port is write-only - it never replies, so a
+# rejected value is logged sim-side and dropped, not NAKed back here):
+#   - number  -> any numeric signal (integer or float)
+#   - boolean -> a boolean signal
+#   - string  -> a string signal, applied verbatim; also how a vector/matrix
+#                signal is set, e.g. "[[1,2][3,4]]" as a string
+# JSON arrays/objects/null are not accepted; send a vector as a string instead.
+# ADDRESS must resolve to a single signal (e.g. .exc.spacecraft.params.mass),
+# not a model or a signal group.  params/inputs/outputs are all addressable, but
+# outputs are recomputed each step - set params/inputs for changes that stick.
+#
 # This target is hand written.  Unlike WARP_CUBE and NSNS it is not generated
 # by CosmosUpdateCmdTlm.py, because it does not come from a WarpOS build.
 # ##############################################################################
