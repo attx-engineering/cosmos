@@ -30,6 +30,18 @@ VARIABLE nsns_enable           true
 VARIABLE nsns_write_port       5008
 VARIABLE nsns_read_port        5007
 
+# ---------------------------------------------------------------------------
+# SIM - simulation value injection
+#
+# Not a WarpOS build target: this is a send-only JSON channel used by the Sim
+# Control tool to set simulation parameters, on its own port so it never mixes
+# with flight software command traffic.  No read port - the simulation does not
+# reply on this socket.
+# ---------------------------------------------------------------------------
+VARIABLE sim_enable            true
+VARIABLE sim_host              host.docker.internal
+VARIABLE sim_write_port        5009
+
 <% if warp_cube_enable.to_s.strip.downcase == "true" %>
 TARGET WARP_CUBE WARP_CUBE
 
@@ -54,4 +66,13 @@ INTERFACE NSNS_INT openc3/interfaces/udp_interface.py host.docker.internal <%= n
   PROTOCOL READ check_pattern.py
   PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
   MAP_TARGET NSNS
+<% end %>
+
+<% if sim_enable.to_s.strip.downcase == "true" %>
+TARGET SIM SIM
+
+# Write only UDP - read_port is None, so COSMOS never listens on this socket.
+# Raw JSON datagrams: no CRC and no check_pattern protocols here on purpose.
+INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_write_port %> None None None 128 10.0 None # Simulation JSON UDP
+  MAP_TARGET SIM
 <% end %>

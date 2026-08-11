@@ -1,0 +1,4 @@
+TOOL simcontrol "Sim Control"
+  INLINE_URL main.js
+  ICON mdi-tune-variant
+  POSITION 11

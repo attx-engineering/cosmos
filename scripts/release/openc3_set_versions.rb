@@ -1,6 +1,6 @@
 # encoding: ascii-8bit
 
-# Copyright 2023 OpenC3, Inc.
+# Copyright 2026 OpenC3, Inc.
 # All Rights Reserved.
 #
 # This program is free software; you can modify and/or redistribute it
@@ -112,6 +112,7 @@ package_dot_json_files = [
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-limitsmonitor/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-packetviewer/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-scriptrunner/package.json',
+  'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tablemanager/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tlmgrapher/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tlmviewer/package.json',

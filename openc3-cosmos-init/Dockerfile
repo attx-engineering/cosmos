@@ -27,6 +27,7 @@ COPY ./plugins/packages/openc3-cosmos-tool-handbooks/*.json packages/openc3-cosm
 COPY ./plugins/packages/openc3-cosmos-tool-limitsmonitor/*.json packages/openc3-cosmos-tool-limitsmonitor/
 COPY ./plugins/packages/openc3-cosmos-tool-packetviewer/*.json packages/openc3-cosmos-tool-packetviewer/
 COPY ./plugins/packages/openc3-cosmos-tool-scriptrunner/*.json packages/openc3-cosmos-tool-scriptrunner/
+COPY ./plugins/packages/openc3-cosmos-tool-simcontrol/*.json packages/openc3-cosmos-tool-simcontrol/
 COPY ./plugins/packages/openc3-cosmos-tool-tablemanager/*.json packages/openc3-cosmos-tool-tablemanager/
 COPY ./plugins/packages/openc3-cosmos-tool-tlmgrapher/*.json packages/openc3-cosmos-tool-tlmgrapher/
 COPY ./plugins/packages/openc3-cosmos-tool-tlmviewer/*.json packages/openc3-cosmos-tool-tlmviewer/
@@ -95,6 +96,10 @@ RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-limitsmonito
 # Build packetviewer tool
 COPY ./plugins/packages/openc3-cosmos-tool-packetviewer/ packages/openc3-cosmos-tool-packetviewer/
 RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-packetviewer"]
+
+# Build simcontrol tool
+COPY ./plugins/packages/openc3-cosmos-tool-simcontrol/ packages/openc3-cosmos-tool-simcontrol/
+RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-simcontrol"]
 
 # Build tlmgrapher tool
 FROM openc3-frontend-tmp AS openc3-tmp4

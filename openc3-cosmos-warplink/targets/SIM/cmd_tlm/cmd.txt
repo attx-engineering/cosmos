@@ -1,0 +1,25 @@
+# ##############################################################################
+# Simulation Value Injection (SIM)
+#
+# Sends a single address/value pair to the simulation as JSON over its own UDP
+# port - separate from the flight software command/telemetry ports.  There is
+# no CCSDS header, no framing and no CRC: the datagram is exactly the JSON
+# object below.
+#
+#   {"address":".exc.spacecraft.params.mass","value":5}
+#
+# VALUE is an ANY parameter, so it goes out as whatever JSON type it parses as:
+# 5 is a number, 5.5 is a number, true is a boolean, and anything that is not
+# valid JSON is sent as a string.
+#
+# This target is hand written.  Unlike WARP_CUBE and NSNS it is not generated
+# by CosmosUpdateCmdTlm.py, because it does not come from a WarpOS build.
+# ##############################################################################
+
+COMMAND SIM SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
+  ACCESSOR JsonAccessor
+  TEMPLATE '{"address":"","value":0}'
+  APPEND_PARAMETER ADDRESS 2048 STRING "" "Simulation address, e.g. .exc.spacecraft.params.mass"
+    KEY $.address
+  APPEND_PARAMETER VALUE 64 ANY 0 "Value to set, sent as its natural JSON type"
+    KEY $.value

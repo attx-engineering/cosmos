@@ -2,6 +2,19 @@
 
 WarpLink plugin for WarpOS flight software, deployed to OpenC3 COSMOS.
 
+## Targets
+
+- `WARP_CUBE`, `NSNS` - WarpOS build targets, CCSDS over UDP with CRC.
+- `SIM` - simulation value injection. Write only UDP on `sim_write_port`
+  (default 5009), separate from the flight software ports. Its one command,
+  `SET_VALUE`, sends raw JSON with no header or CRC:
+
+  ```json
+  { "address": ".exc.spacecraft.params.mass", "value": 5 }
+  ```
+
+  The Sim Control tool in the sidebar is the front end for it.
+
 ## Building
 
 ```bash

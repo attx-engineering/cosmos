@@ -68,6 +68,8 @@ jobs:
               - 'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-packetviewer/**'
             scriptrunner:
               - 'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-scriptrunner/**'
+            simcontrol:
+              - 'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/**'
             tablemanager:
               - 'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tablemanager/**'
             tlmgrapher:
@@ -308,6 +310,25 @@ jobs:
       - name: Run ESLint
         run: pnpm lint --max-warnings 0
         working-directory: openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-scriptrunner
+
+  simcontrol:
+    needs: changes
+    if: ${{ github.actor != 'dependabot[bot]' && (needs.changes.outputs.simcontrol == 'true' || needs.changes.outputs.plugins == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
+        with:
+          version: 10
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+        working-directory: openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol
+      - name: Run ESLint
+        run: pnpm lint --max-warnings 0
+        working-directory: openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol
 
   tablemanager:
     needs: changes
