@@ -17,6 +17,10 @@
 # if purchased from OpenC3, Inc.
 
 # Set openc3 main gem version path
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 base_path = File.expand_path(File.join(__dir__, '..', '..'))
 path = File.join(base_path, 'openc3', 'lib', 'openc3', 'version.rb')
 

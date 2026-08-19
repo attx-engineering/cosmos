@@ -21,6 +21,10 @@
 # if purchased from OpenC3, Inc.
 
 # This file contains top level functions in the OpenC3 namespace
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require 'digest'
 require 'open3'
