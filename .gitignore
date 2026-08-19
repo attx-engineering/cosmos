@@ -24,6 +24,8 @@ profile/
 plugins/DEFAULT/
 **/python/prof/
 *.dSYM/
+cmd_tlm.json
+graph_tree.json
 
 # local env files
 .env.local

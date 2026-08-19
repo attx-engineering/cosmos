@@ -11,24 +11,10 @@
 # plugin install dialog without editing this file.  Set <target>_enable to
 # false to skip a target you are not flying.
 #
-# To add a new build target, copy a block below and change the target name,
-# the interface name, and the ports.  The targets/<name>/ folder must exist in
-# the gem — CosmosUpdateCmdTlm.py generates it and warns if no block is found.
-
-# ---------------------------------------------------------------------------
-# WARP_CUBE
-# ---------------------------------------------------------------------------
-VARIABLE warp_cube_enable      true
-VARIABLE warp_cube_host        172.20.10.4
-VARIABLE warp_cube_write_port  5006
-VARIABLE warp_cube_read_port   5005
-
-# ---------------------------------------------------------------------------
-# NSNS
-# ---------------------------------------------------------------------------
-VARIABLE nsns_enable           true
-VARIABLE nsns_write_port       5008
-VARIABLE nsns_read_port        5007
+# CosmosUpdateCmdTlm.py adds a block for each new build target it generates,
+# on the next free ports, and never rewrites a block that already exists — so
+# ports and hosts tuned here survive a regeneration.  To add one by hand, copy
+# a block below and change the target name, the interface name, and the ports.
 
 # ---------------------------------------------------------------------------
 # SIM - simulation value injection
@@ -41,32 +27,6 @@ VARIABLE nsns_read_port        5007
 VARIABLE sim_enable            true
 VARIABLE sim_host              host.docker.internal
 VARIABLE sim_write_port        5009
-
-<% if warp_cube_enable.to_s.strip.downcase == "true" %>
-TARGET WARP_CUBE WARP_CUBE
-
-# Uncomment the line that matches your hardware connection
-#INTERFACE WARP_CUBE_INT openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 115200 NONE 1 10.0 None # Serial to Linux
-#INTERFACE WARP_CUBE_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal <%= warp_cube_write_port %> <%= warp_cube_read_port %> 10.0 None # Docker routing to Windows bridge
-INTERFACE WARP_CUBE_INT openc3/interfaces/udp_interface.py <%= warp_cube_host %> <%= warp_cube_write_port %> <%= warp_cube_read_port %> None None 128 10.0 None # RasPi UDP
-  PROTOCOL WRITE openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
-  PROTOCOL READ check_pattern.py
-  PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
-  MAP_TARGET WARP_CUBE
-<% end %>
-
-<% if nsns_enable.to_s.strip.downcase == "true" %>
-TARGET NSNS NSNS
-
-# Uncomment the line that matches your hardware connection
-#INTERFACE NSNS_INT openc3/interfaces/serial_interface.py /dev/ttyUSB1 /dev/ttyUSB1 115200 NONE 1 10.0 None # Serial to Linux
-#INTERFACE NSNS_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal <%= nsns_write_port %> <%= nsns_read_port %> 10.0 None # Docker routing to Windows bridge
-INTERFACE NSNS_INT openc3/interfaces/udp_interface.py host.docker.internal <%= nsns_write_port %> <%= nsns_read_port %> None None 128 10.0 None # RasPi UDP
-  PROTOCOL WRITE openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
-  PROTOCOL READ check_pattern.py
-  PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
-  MAP_TARGET NSNS
-<% end %>
 
 <% if sim_enable.to_s.strip.downcase == "true" %>
 TARGET SIM SIM

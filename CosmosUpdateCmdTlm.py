@@ -23,7 +23,9 @@ the OpenC3/COSMOS plugin.
 
 COSMOS target name and output paths are derived from the JSON's cosmos_target
 field so that each build gets its own COSMOS target (e.g., SIMPLE_PI_BLINKER),
-allowing multiple builds to coexist in one COSMOS instance.
+allowing multiple builds to coexist in one COSMOS instance.  A matching
+TARGET + INTERFACE block, modelled on WARP_CUBE's and given its own UDP ports,
+is added to plugin.txt when the target is new.
 
 Telemetry rule : only packets with at least one registration entry are emitted.
 Command rule   : all commands from all apps in the build are emitted.
@@ -48,6 +50,17 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 _TLM_APID_MASK = 0x0800   # telemetry flag
 _CMD_APID_MASK = 0x1800   # command + secondary-header-present flags
+
+# ---------------------------------------------------------------------------
+# plugin.txt generation
+# ---------------------------------------------------------------------------
+# Host a generated TARGET block points at.  host.docker.internal routes out of
+# the COSMOS container to the machine running it, which is right for a bridge
+# or a simulator; a board on the network needs its own address instead.
+DEFAULT_PLUGIN_HOST = "host.docker.internal"
+
+# First UDP port used when plugin.txt declares no ports at all.
+_DEFAULT_BASE_PORT = 5005
 
 # ---------------------------------------------------------------------------
 # Telemetry packet naming
@@ -343,8 +356,9 @@ class CosmosUpdateCmdTlm:
     Generate COSMOS cmd.txt and tlm.txt from a warplink cmd_tlm.json.
 
     Also sets up the full target directory by copying target.txt and lib/
-    from targets/common/ into targets/<cosmos_target>/, and checks that
-    plugin.txt declares a TARGET block for the generated target.
+    from targets/common/ into targets/<cosmos_target>/, and adds a
+    TARGET + INTERFACE block for the generated target to plugin.txt if it
+    does not already declare one.
 
     Parameters
     ----------
@@ -361,8 +375,13 @@ class CosmosUpdateCmdTlm:
         Path to the targets/common/ folder containing the shared target.txt
         and lib/.  Defaults to <target_dir>/common.  Skipped if absent.
     plugin_txt : str | Path | None
-        Path to plugin.txt.  Checked for a TARGET block matching the
-        cosmos_target value.  Defaults to <target_dir>/../plugin.txt.
+        Path to plugin.txt.  Gains a TARGET block for the cosmos_target value
+        if it has none.  Defaults to <target_dir>/../plugin.txt.
+    plugin_host : str
+        Host the generated INTERFACE line points at.  Only used when a new
+        block is written; existing blocks are never rewritten.
+    update_plugin : bool
+        False only warns about a missing TARGET block instead of adding one.
     """
 
     def __init__(
@@ -373,6 +392,8 @@ class CosmosUpdateCmdTlm:
         target_dir,
         common_dir=None,
         plugin_txt=None,
+        plugin_host=DEFAULT_PLUGIN_HOST,
+        update_plugin=True,
     ):
         with open(cmd_tlm_json) as f:
             self._data = json.load(f)
@@ -396,6 +417,8 @@ class CosmosUpdateCmdTlm:
         self._target_root   = target_dir / self._target
         self._common_dir    = Path(common_dir) if common_dir else target_dir / "common"
         self._plugin_txt    = Path(plugin_txt) if plugin_txt else target_dir.parent / "plugin.txt"
+        self._plugin_host   = plugin_host
+        self._update_plugin = update_plugin
 
     # ------------------------------------------------------------------
     # Target directory setup helpers
@@ -426,31 +449,118 @@ class CosmosUpdateCmdTlm:
             shutil.copytree(src_lib, dst_lib, dirs_exist_ok=True)
             print(f"Copied       : {dst_lib}/")
 
-    def _check_plugin_txt(self) -> None:
+    def _next_free_ports(self, text: str) -> tuple[int, int]:
         """
-        Warn if plugin.txt has no TARGET block for the generated target.
+        Return (read_port, write_port) that no VARIABLE in plugin.txt uses.
 
-        plugin.txt declares one TARGET + INTERFACE block per build target, each
-        on its own ports.  Generating a target the plugin never declares would
-        ship cmd/tlm definitions that COSMOS silently ignores, so say so loudly
-        rather than failing at install time.
+        COSMOS scopes packet identification to the targets mapped to the
+        receiving interface, and every WarpOS build reuses the same STREAM_IDs,
+        so two targets must never share a port.  Taking one above the highest
+        port already declared keeps new targets clear of every existing one
+        without having to reason about which are currently enabled.
+        """
+        ports = [
+            int(m)
+            for m in re.findall(
+                r'^\s*VARIABLE\s+\w*_port\s+(\d+)\s*$', text, flags=re.MULTILINE
+            )
+        ]
+        read_port = max(ports) + 1 if ports else _DEFAULT_BASE_PORT
+        return read_port, read_port + 1
+
+    def _plugin_block(self, read_port: int, write_port: int) -> tuple[str, str]:
+        """
+        Build the (VARIABLE block, TARGET block) pair for this target.
+
+        Mirrors the WARP_CUBE blocks: same UDP interface, same CRC and
+        check_pattern protocols, with the target name, interface name and
+        ports swapped in.  The commented serial and TCP/IP lines come along
+        so the connection can be switched by uncommenting, as for WARP_CUBE.
+        """
+        target = self._target
+        prefix = target.lower()
+        rule   = "# " + "-" * 75
+
+        names = [f"{prefix}_{s}" for s in ("enable", "host", "write_port", "read_port")]
+        width = max(len(n) for n in names) + 2
+        values = ["true", self._plugin_host, str(write_port), str(read_port)]
+
+        var_block = "\n".join(
+            [rule, f"# {target}", rule]
+            + [f"VARIABLE {n:<{width}}{v}" for n, v in zip(names, values)]
+        ) + "\n"
+
+        interface = f"{target}_INT"
+        target_block = f"""
+<% if {prefix}_enable.to_s.strip.downcase == "true" %>
+TARGET {target} {target}
+
+# Uncomment the line that matches your hardware connection
+#INTERFACE {interface} openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 115200 NONE 1 10.0 None # Serial to Linux
+#INTERFACE {interface} openc3/interfaces/tcpip_client_interface.py host.docker.internal <%= {prefix}_write_port %> <%= {prefix}_read_port %> 10.0 None # Docker routing to Windows bridge
+INTERFACE {interface} openc3/interfaces/udp_interface.py <%= {prefix}_host %> <%= {prefix}_write_port %> <%= {prefix}_read_port %> None None 128 10.0 None # RasPi UDP
+  PROTOCOL WRITE openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
+  PROTOCOL READ check_pattern.py
+  PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
+  MAP_TARGET {target}
+<% end %>
+"""
+        return var_block, target_block
+
+    def _update_plugin_txt(self) -> None:
+        """
+        Add a TARGET + INTERFACE block for the generated target to plugin.txt.
+
+        plugin.txt declares one such block per build target, each on its own
+        ports.  Generating a target the plugin never declares would ship
+        cmd/tlm definitions that COSMOS silently ignores, so write the block
+        rather than leaving it as a manual step.
+
+        Already-declared targets are left exactly as they are: the ports, host
+        and interface type in an existing block are deployment choices, and
+        rewriting them on every build would undo whatever was tuned by hand.
         """
         if not self._plugin_txt.exists():
+            print(f"WARNING      : {self._plugin_txt} not found, no TARGET block written")
             return
 
-        declared = re.search(
-            rf'^\s*TARGET\s+{re.escape(self._target)}\s',
-            self._plugin_txt.read_text(),
-            flags=re.MULTILINE,
-        )
-        if declared:
-            print(f"Declared     : TARGET {self._target} found in {self._plugin_txt}")
-        else:
+        text = self._plugin_txt.read_text()
+
+        if re.search(
+            rf'^\s*TARGET\s+{re.escape(self._target)}\s', text, flags=re.MULTILINE
+        ):
+            print(f"Declared     : TARGET {self._target} already in {self._plugin_txt}")
+            return
+
+        if not self._update_plugin:
             print(
                 f"WARNING      : no 'TARGET {self._target}' block in {self._plugin_txt}.\n"
-                f"               Copy an existing block and change the target name,\n"
-                f"               interface name, and ports, or the target will not load."
+                f"               Re-run without --no-plugin-txt to add one, or copy an\n"
+                f"               existing block and change the target name, interface\n"
+                f"               name, and ports, or the target will not load."
             )
+            return
+
+        read_port, write_port = self._next_free_ports(text)
+        var_block, target_block = self._plugin_block(read_port, write_port)
+
+        # VARIABLEs go with the others, above the first ERB block that uses
+        # them; the TARGET block goes at the end, where appending cannot break
+        # an existing <% if %> ... <% end %> pair.
+        erb = re.search(r'^<%', text, flags=re.MULTILINE)
+        if erb:
+            text = text[: erb.start()] + var_block + "\n" + text[erb.start() :]
+        else:
+            text = text.rstrip("\n") + "\n\n" + var_block
+
+        text = text.rstrip("\n") + "\n" + target_block
+        self._plugin_txt.write_text(text)
+
+        print(
+            f"Declared     : TARGET {self._target} added to {self._plugin_txt}\n"
+            f"               host={self._plugin_host} "
+            f"write_port={write_port} read_port={read_port}"
+        )
 
     # ------------------------------------------------------------------
 
@@ -489,7 +599,7 @@ class CosmosUpdateCmdTlm:
         self._out_dir.mkdir(parents=True, exist_ok=True)
         (self._out_dir / "tlm.txt").write_text(tlm_str)
         (self._out_dir / "cmd.txt").write_text(cmd_str)
-        self._check_plugin_txt()
+        self._update_plugin_txt()
 
         print(f"COSMOS target : {self._target}")
         print(f"Written       : {self._out_dir / 'tlm.txt'}")
@@ -541,6 +651,19 @@ if __name__ == "__main__":
         help="Path to plugin.txt to update. "
              "Defaults to <target-dir>/../plugin.txt",
     )
+    parser.add_argument(
+        "--plugin-host",
+        default=DEFAULT_PLUGIN_HOST,
+        help="Host the generated INTERFACE line connects to "
+             f"(default: {DEFAULT_PLUGIN_HOST}). Only used when adding a new "
+             "TARGET block; existing blocks are left alone",
+    )
+    parser.add_argument(
+        "--no-plugin-txt",
+        dest="update_plugin",
+        action="store_false",
+        help="Only warn about a missing TARGET block instead of adding one",
+    )
     args = parser.parse_args()
 
     gen = CosmosUpdateCmdTlm(
@@ -550,5 +673,7 @@ if __name__ == "__main__":
         args.target_dir,
         common_dir=args.common_dir,
         plugin_txt=args.plugin_txt,
+        plugin_host=args.plugin_host,
+        update_plugin=args.update_plugin,
     )
     gen()
