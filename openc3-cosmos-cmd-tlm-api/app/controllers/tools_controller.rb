@@ -12,13 +12,18 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-
+#
 # Modified by OpenC3, Inc.
 # All changes Copyright 2024, OpenC3, Inc.
 # All Rights Reserved
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All rights reserved
+
 
 require 'openc3/models/tool_model'
 require 'openc3/models/role_model'

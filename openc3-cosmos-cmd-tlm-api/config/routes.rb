@@ -19,6 +19,11 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All rights reserved
+
 
 # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
 

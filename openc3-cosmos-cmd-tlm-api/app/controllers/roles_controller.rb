@@ -1,6 +1,6 @@
 # encoding: ascii-8bit
 
-# Copyright 2026 OpenC3, Inc.
+# Copyright 2022 Ball Aerospace & Technologies Corp.
 # All Rights Reserved.
 #
 # This program is free software; you can modify and/or redistribute it
@@ -13,8 +13,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 #
+# Modified by OpenC3, Inc.
+# All changes Copyright 2022, OpenC3, Inc.
+# All Rights reserved
+#
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All rights reserved
 
 begin
   require 'openc3-enterprise/controllers/roles_controller'
