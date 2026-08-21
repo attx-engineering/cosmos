@@ -1,0 +1,54 @@
+###############################################################################
+# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+#
+# This software and associated documentation (the "Software") are the
+# proprietary and confidential information of ATTX, Inc. The Software is
+# furnished under a license agreement between ATTX and the user organization
+# and may be used or copied only in accordance with the terms of the agreement.
+# Refer to 'license/attx_license.adoc' for standard license terms.
+#
+# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
+# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
+# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
+# transmitted in any form or by any means, for any purpose, without the express
+# written permission of ATTX, Inc.
+###############################################################################
+
+# plugin.txt - WarpLink plugin for WarpOS flight software
+#
+# One TARGET + INTERFACE block per WarpOS build target.  Each target needs its
+# own UDP ports: COSMOS scopes packet identification to the targets mapped to
+# the receiving interface, and the builds reuse the same STREAM_IDs.  Two
+# targets sharing an interface — or two interfaces sharing a read port — cannot
+# be told apart, and whichever interface the kernel hands a datagram to will
+# claim it.
+#
+# Every connection setting is a VARIABLE, so it can be changed in the COSMOS
+# plugin install dialog without editing this file.  Set <target>_enable to
+# false to skip a target you are not flying.
+#
+# CosmosUpdateCmdTlm.py adds a block for each new build target it generates,
+# on the next free ports, and never rewrites a block that already exists — so
+# ports and hosts tuned here survive a regeneration.  To add one by hand, copy
+# a block below and change the target name, the interface name, and the ports.
+
+# ---------------------------------------------------------------------------
+# SIM - simulation value injection
+#
+# Not a WarpOS build target: this is a send-only JSON channel used by the Sim
+# Control tool to set simulation parameters, on its own port so it never mixes
+# with flight software command traffic.  No read port - the simulation does not
+# reply on this socket.
+# ---------------------------------------------------------------------------
+VARIABLE sim_enable            true
+VARIABLE sim_host              host.docker.internal
+VARIABLE sim_write_port        5009
+
+<% if sim_enable.to_s.strip.downcase == "true" %>
+TARGET SIM SIM
+
+# Write only UDP - read_port is None, so COSMOS never listens on this socket.
+# Raw JSON datagrams: no CRC and no check_pattern protocols here on purpose.
+INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_write_port %> None None None 128 10.0 None # Simulation JSON UDP
+  MAP_TARGET SIM
+<% end %>

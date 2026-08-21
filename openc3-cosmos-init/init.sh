@@ -138,6 +138,9 @@ fi
 if [ -z $OPENC3_NO_PACKETVIEWER ]; then
     ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-packetviewer-*.gem || exit 1
 fi
+if [ -z $OPENC3_NO_SIMCONTROL ]; then
+    ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-simcontrol-*.gem || exit 1
+fi
 if [ -z $OPENC3_NO_TLMVIEWER ]; then
     ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-tlmviewer-*.gem || exit 1
 fi

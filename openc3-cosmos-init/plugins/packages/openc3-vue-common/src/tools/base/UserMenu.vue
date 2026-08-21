@@ -18,6 +18,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 -->
 
 <template>
@@ -66,14 +70,6 @@
           <div v-else>
             <v-btn block color="primary" @click="login"> Login </v-btn>
           </div>
-          <div
-            v-if="name === 'Anonymous'"
-            class="pt-2 link"
-            @click="showUpgradeToEnterpriseDialog = true"
-          >
-            Click to learn more about<br />
-            COSMOS Enterprise
-          </div>
         </v-card-text>
         <div v-if="newsFeed">
           <v-row no-gutters class="news-header">
@@ -113,23 +109,15 @@
         </div>
       </v-card>
     </v-menu>
-    <upgrade-to-enterprise-dialog
-      v-model="showUpgradeToEnterpriseDialog"
-      reason="Enterprise has individual users with RBAC"
-    />
   </div>
 </template>
 
 <script>
 import { Api } from '@openc3/js-common/services'
 import { OpenC3Api } from '@openc3/js-common/services'
-import { UpgradeToEnterpriseDialog } from '@/components'
 import DOMPurify from 'dompurify'
 
 export default {
-  components: {
-    UpgradeToEnterpriseDialog,
-  },
   props: {
     size: {
       type: [String, Number],
@@ -145,7 +133,6 @@ export default {
       name: user['name'],
       // preferred_username is returned by the token (see authorization.rb)
       username: user['preferred_username'],
-      showUpgradeToEnterpriseDialog: false,
       activeUsers: ['None'],
       newsFeed: false,
       news: [],

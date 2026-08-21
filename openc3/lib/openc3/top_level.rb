@@ -21,6 +21,10 @@
 # if purchased from OpenC3, Inc.
 
 # This file contains top level functions in the OpenC3 namespace
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require 'digest'
 require 'open3'
@@ -598,6 +602,15 @@ unless ENV['OPENC3_NO_COSMOS_COMPATIBILITY']
         end
         super(*args)
       end
+
+      # Kernel#require and Kernel#load are private instance methods. Overriding
+      # them without preserving that visibility makes every object publicly
+      # respond to #load, which shadows singleton methods that are defined
+      # lazily. multi_json 1.21+ renamed MultiJson to MultiJSON and only
+      # defines the legacy MultiJson.load shim when that name isn't already
+      # taken -- a public Object#load meant MultiJson.load silently resolved
+      # here instead, passing JSON documents to Kernel#load as filenames.
+      private :safe_openc3_path?, :require, :load
     end
     class Object
       include CosmosCompatibility

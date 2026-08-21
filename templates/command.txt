@@ -1,0 +1,27 @@
+###############################################################################
+# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+#
+# This software and associated documentation (the "Software") are the
+# proprietary and confidential information of ATTX, Inc. The Software is
+# furnished under a license agreement between ATTX and the user organization
+# and may be used or copied only in accordance with the terms of the agreement.
+# Refer to 'license/attx_license.adoc' for standard license terms.
+#
+# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
+# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
+# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
+# transmitted in any form or by any means, for any purpose, without the express
+# written permission of ATTX, Inc.
+###############################################################################
+
+COMMAND <<TARGET>> <<PACKET_NAME>> <<ENDIANNESS>> "<<DESCRIPTION>>"
+  # Keyword        Name                          BitSize   Type      Min       Max       Default   Description
+  APPEND_ID_PARAMETER STREAM_ID                  16        UINT      MIN       MAX       <<APID>>  "Stream ID"
+  APPEND_PARAMETER SEQUENCE                      16        UINT      MIN       MAX       49152     "Packet Sequence Flag"
+  APPEND_PARAMETER PKT_LEN                       16        UINT      MIN       MAX       <<SIZE>>  "Length of the packet"
+  APPEND_PARAMETER SEC_HDR1                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR2                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER SEC_HDR3                      16        UINT      MIN       MAX       0         " "
+  APPEND_PARAMETER APID_INSTANCE                 8         UINT      MIN       MAX       0         "Instance of the destination APID"
+  APPEND_PARAMETER FILLER                        8         UINT      MIN       MAX       187       " "
+<<ADDITIONAL_FIELDS>>

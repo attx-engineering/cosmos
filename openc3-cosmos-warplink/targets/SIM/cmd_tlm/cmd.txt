@@ -1,0 +1,52 @@
+###############################################################################
+# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+#
+# This software and associated documentation (the "Software") are the
+# proprietary and confidential information of ATTX, Inc. The Software is
+# furnished under a license agreement between ATTX and the user organization
+# and may be used or copied only in accordance with the terms of the agreement.
+# Refer to 'license/attx_license.adoc' for standard license terms.
+#
+# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
+# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
+# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
+# transmitted in any form or by any means, for any purpose, without the express
+# written permission of ATTX, Inc.
+###############################################################################
+
+# ##############################################################################
+# Simulation Value Injection (SIM)
+#
+# Sends a single address/value pair to the simulation as JSON over its own UDP
+# port - separate from the flight software command/telemetry ports.  There is
+# no CCSDS header, no framing and no CRC: the datagram is exactly the JSON
+# object below.
+#
+#   {"address":".exc.spacecraft.params.mass","value":5}
+#
+# VALUE is an ANY parameter, so it goes out as whatever JSON type it parses as:
+# 5 is a number, 5.5 is a number, true is a boolean, and anything that is not
+# valid JSON is sent as a string.
+#
+# What the simulation accepts (this port is write-only - it never replies, so a
+# rejected value is logged sim-side and dropped, not NAKed back here):
+#   - number  -> any numeric signal (integer or float)
+#   - boolean -> a boolean signal
+#   - string  -> a string signal, applied verbatim; also how a vector/matrix
+#                signal is set, e.g. "[[1,2][3,4]]" as a string
+# JSON arrays/objects/null are not accepted; send a vector as a string instead.
+# ADDRESS must resolve to a single signal (e.g. .exc.spacecraft.params.mass),
+# not a model or a signal group.  params/inputs/outputs are all addressable, but
+# outputs are recomputed each step - set params/inputs for changes that stick.
+#
+# This target is hand written.  Unlike WARP_CUBE and NSNS it is not generated
+# by CosmosUpdateCmdTlm.py, because it does not come from a WarpOS build.
+# ##############################################################################
+
+COMMAND SIM SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
+  ACCESSOR JsonAccessor
+  TEMPLATE '{"address":"","value":0}'
+  APPEND_PARAMETER ADDRESS 2048 STRING "" "Simulation address, e.g. .exc.spacecraft.params.mass"
+    KEY $.address
+  APPEND_PARAMETER VALUE 64 ANY 0 "Value to set, sent as its natural JSON type"
+    KEY $.value

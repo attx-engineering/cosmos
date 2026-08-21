@@ -19,6 +19,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require "openc3/version"
 require "openc3/models/model"
@@ -402,7 +406,7 @@ module OpenC3
 
     def seed_database
       setting = SettingModel.get(name: "source_url")
-      SettingModel.set({name: "source_url", data: "https://github.com/OpenC3/cosmos"}, scope: @scope) unless setting
+      SettingModel.set({name: "source_url", data: "https://github.com/attx-engineering/cosmos"}, scope: @scope) unless setting
       setting = SettingModel.get(name: "rubygems_url")
       SettingModel.set({name: "rubygems_url", data: ENV["RUBYGEMS_URL"] || "https://rubygems.org"}, scope: @scope) unless setting
       setting = SettingModel.get(name: "pypi_url")

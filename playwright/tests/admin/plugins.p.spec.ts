@@ -1,5 +1,5 @@
 /*
-# Copyright 2025 OpenC3, Inc.
+# Copyright 2026 OpenC3, Inc.
 # All Rights Reserved.
 #
 # This program is free software; you can modify and/or redistribute it
@@ -11,6 +11,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 */
 
 // @ts-check
@@ -94,6 +98,9 @@ test('shows and hides built-in tools', async ({ page, utils }) => {
     'openc3-cosmos-tool-scriptrunner',
   )
   await expect(page.locator('id=openc3-tool')).not.toContainText(
+    'openc3-cosmos-tool-simcontrol',
+  )
+  await expect(page.locator('id=openc3-tool')).not.toContainText(
     'openc3-cosmos-tool-tablemanager',
   )
   await expect(page.locator('id=openc3-tool')).not.toContainText(
@@ -169,6 +176,9 @@ test('shows and hides built-in tools', async ({ page, utils }) => {
   )
   await expect(page.locator('id=openc3-tool')).toContainText(
     'openc3-cosmos-tool-scriptrunner',
+  )
+  await expect(page.locator('id=openc3-tool')).toContainText(
+    'openc3-cosmos-tool-simcontrol',
   )
   await expect(page.locator('id=openc3-tool')).toContainText(
     'openc3-cosmos-tool-tablemanager',

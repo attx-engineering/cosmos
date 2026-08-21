@@ -18,14 +18,25 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 -->
 
 <template>
   <v-footer v-if="!chromeless" id="footer" app height="33">
-    <img :src="icon" alt="OpenC3" />
-    <span :class="footerClass" @click="upgrade">
-      OpenC3 {{ edition }} {{ version }} &copy; 2025 - License:
-      {{ license }}
+    <img :src="icon" alt="WarpLink" />
+    <!--
+      LICENSE.txt addendum 1 requires the OpenC3 and Ball Aerospace copyright
+      notices to be preserved or duplicated on all user interfaces; addendum 2
+      and AGPL 5(a) require the work to be marked as modified, by whom, with a
+      date. Do not shorten this without checking those terms.
+    -->
+    <span class="footer-text">
+      WarpLink &copy; 2026 WarpWare &mdash; modified from OpenC3 COSMOS
+      {{ version }} &copy; OpenC3, Inc. and Ball Aerospace &amp; Technologies
+      Corp. &mdash; License: {{ license }}
     </span>
     <v-spacer />
     <a :href="sourceUrl" class="text-white text-decoration-underline">
@@ -33,22 +44,16 @@
     </a>
     <v-spacer />
     <div class="justify-right"><clock-footer /></div>
-    <upgrade-to-enterprise-dialog
-      v-model="showUpgradeToEnterpriseDialog"
-      reason="Enterprise is Commercially Licensed"
-    />
   </v-footer>
 </template>
 
 <script>
 import { Api, OpenC3Api } from '@openc3/js-common/services'
-import { UpgradeToEnterpriseDialog } from '@/components'
 import ClockFooter from './ClockFooter.vue'
 
 export default {
   components: {
     ClockFooter,
-    UpgradeToEnterpriseDialog,
   },
   data() {
     return {
@@ -58,18 +63,8 @@ export default {
       license: '',
       sourceUrl: '',
       version: '',
-      showUpgradeToEnterpriseDialog: false,
       chromeless: null,
     }
-  },
-  computed: {
-    footerClass() {
-      if (this.enterprise) {
-        return 'enterprise'
-      } else {
-        return 'core'
-      }
-    },
   },
   created: function () {
     const urlParams = new URLSearchParams(window.location.search)
@@ -93,21 +88,12 @@ export default {
         this.sourceUrl = response[0]
       })
     },
-    upgrade: function () {
-      if (!this.enterprise) {
-        this.showUpgradeToEnterpriseDialog = true
-      }
-    },
   },
 }
 </script>
 
 <style scoped>
-.core {
-  margin-left: 5px;
-  cursor: pointer;
-}
-.enterprise {
+.footer-text {
   margin-left: 5px;
 }
 #footer {

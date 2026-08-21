@@ -1,0 +1,29 @@
+ATTX, Inc. Proprietary License
+
+Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+
+This software and associated documentation (the "Software") are the
+proprietary and confidential information of ATTX, Inc. The Software is
+furnished under a license agreement between ATTX and the user organization
+and may be used or copied only in accordance with the terms of the agreement.
+Refer to 'license/attx_license.adoc' for standard license terms.
+
+No part of the Software may be used, reproduced, or transmitted in any form or
+by any means, for any purpose, without the express written permission of
+ATTX, Inc.
+
+EXPORT CONTROL NOTICE
+
+THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE INTERNATIONAL TRAFFIC
+IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION REGULATIONS (EAR99).
+Export, re-export, or transfer of this Software to a foreign person, whether
+in the United States or abroad, may require prior authorization from the
+U.S. Government.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+This plugin is designed to run on OpenC3 COSMOS. COSMOS itself is licensed
+separately by OpenC3, Inc.; see the LICENSE.md of the COSMOS distribution.
+Nothing in this license grants any rights to COSMOS.

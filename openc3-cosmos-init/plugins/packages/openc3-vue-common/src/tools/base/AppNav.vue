@@ -18,6 +18,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 -->
 
 <template>
@@ -27,10 +31,8 @@
       id="openc3-nav-drawer"
       :model-value="drawer"
     >
-      <img :src="logo" class="logo" alt="OpenC3" />
-      <div class="cosmos" @click="showUpgradeToEnterpriseDialog = true">
-        COSMOS
-      </div>
+      <img :src="logo" class="logo" alt="WarpLink" />
+      <div class="cosmos">WarpLink</div>
       <div style="text-align: center; font-size: 18pt">
         {{ subtitle }}
       </div>
@@ -144,34 +146,25 @@
           <v-row class="flex-nowrap">
             <v-spacer />
             <context-tag />
-            <scope-selector class="mr-6 mt-4" />
             <notifications class="mr-6" data-test="notifications" />
             <user-menu class="mr-6" /> </v-row
         ></v-col>
       </v-row>
     </v-app-bar>
-    <upgrade-to-enterprise-dialog
-      v-model="showUpgradeToEnterpriseDialog"
-      reason="Enterprise adds Calendar and Autonomic"
-    />
   </div>
 </template>
 
 <script>
 import { navigateToUrl, registerApplication, start } from 'single-spa'
 import { Api, OpenC3Api } from '@openc3/js-common/services'
-import { UpgradeToEnterpriseDialog } from '@/components'
 import Notifications from './Notifications.vue'
-import ScopeSelector from './ScopeSelector.vue'
 import UserMenu from './UserMenu.vue'
 import ContextTag from './ContextTag.vue'
 
 export default {
   components: {
     Notifications,
-    ScopeSelector,
     UserMenu,
-    UpgradeToEnterpriseDialog,
     ContextTag,
   },
   props: {
@@ -194,7 +187,6 @@ export default {
       appNav: {},
       logo: '/img/logo.png',
       initiallyOpen: [],
-      showUpgradeToEnterpriseDialog: false,
       chromeless: null,
     }
   },
@@ -384,9 +376,12 @@ export default {
   display: block;
   margin-left: auto;
   margin-right: auto;
+  margin-top: 24px; /* ~1/4 inch at 96dpi */
+  width: 200px;
+  max-width: 100%;
+  height: auto;
 }
 .cosmos {
-  cursor: pointer;
   text-align: center;
   font-size: 18pt;
 }

@@ -1,4 +1,4 @@
-# Copyright 2024 OpenC3, Inc.
+# Copyright 2026 OpenC3, Inc.
 # All Rights Reserved.
 #
 # This program is free software; you can modify and/or redistribute it
@@ -13,6 +13,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 import os
 import json
@@ -37,6 +41,7 @@ class LocalMode:
         "openc3-cosmos-tool-limitsmonitor",
         "openc3-cosmos-tool-packetviewer",
         "openc3-cosmos-tool-scriptrunner",
+        "openc3-cosmos-tool-simcontrol",
         "openc3-cosmos-tool-tablemanager",
         "openc3-cosmos-tool-tlmgrapher",
         "openc3-cosmos-tool-tlmviewer",

@@ -1,6 +1,6 @@
 # encoding: ascii-8bit
 
-# Copyright 2023 OpenC3, Inc.
+# Copyright 2026 OpenC3, Inc.
 # All Rights Reserved.
 #
 # This program is free software; you can modify and/or redistribute it
@@ -17,6 +17,10 @@
 # if purchased from OpenC3, Inc.
 
 # Set openc3 main gem version path
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 base_path = File.expand_path(File.join(__dir__, '..', '..'))
 path = File.join(base_path, 'openc3', 'lib', 'openc3', 'version.rb')
 
@@ -112,6 +116,7 @@ package_dot_json_files = [
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-limitsmonitor/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-packetviewer/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-scriptrunner/package.json',
+  'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tablemanager/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tlmgrapher/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tlmviewer/package.json',
