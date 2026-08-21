@@ -1,0 +1,40 @@
+/*
+###############################################################################
+# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+#
+# This software and associated documentation (the "Software") are the
+# proprietary and confidential information of ATTX, Inc. The Software is
+# furnished under a license agreement between ATTX and the user organization
+# and may be used or copied only in accordance with the terms of the agreement.
+# Refer to 'license/attx_license.adoc' for standard license terms.
+#
+# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
+# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
+# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
+# transmitted in any form or by any means, for any purpose, without the express
+# written permission of ATTX, Inc.
+###############################################################################
+*/
+
+import { createRouter, createWebHistory } from 'vue-router'
+import { prependBasePath } from '@openc3/js-common/utils'
+import { NotFound } from '@openc3/vue-common/components'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Calendar',
+    component: () => import('./tools/Calendar/Calendar.vue'),
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: NotFound,
+  },
+]
+routes.forEach(prependBasePath)
+
+export default createRouter({
+  history: createWebHistory(),
+  routes,
+})

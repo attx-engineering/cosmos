@@ -17,6 +17,7 @@
 # if purchased from OpenC3, Inc.
 
 require 'date'
+require 'time' # Time.parse, for pass times given as strings
 
 module OpenC3
   module Script
@@ -92,6 +93,85 @@ module OpenC3
     def delete_timeline_activity(name, start, uuid, scope: $openc3_scope)
       response = $api_server.request('delete', "/openc3-api/timeline/#{name}/activity/#{start}/#{uuid}", scope: scope)
       return _cal_handle_response(response, 'Failed to delete timeline activity')
+    end
+
+    # Publish satellite pass windows onto a timeline as 'reserve' activities.
+    #
+    # A reserve activity occupies time on the calendar without executing
+    # anything, which is exactly what a pass window is: it shows when the
+    # spacecraft is visible so commands and scripts can be scheduled inside it.
+    #
+    # @param passes [Array<Hash>] each entry needs a start and a stop, given as
+    #   a Time, a DateTime, an ISO 8601 String, or epoch seconds. Any other keys
+    #   (satellite, ground_station, max_elevation, ...) are stored on the
+    #   activity and shown in the calendar.
+    # @param timeline [String] timeline to publish onto, created if missing
+    # @param color [String] color for the timeline when it has to be created
+    # @param replace [Boolean] remove existing reserve activities that fall in
+    #   the range being published before adding the new ones, so re-running
+    #   against updated propagation replaces passes rather than duplicating them
+    # @return [Hash] counts of what happened, with the skipped passes listed
+    def create_pass_activities(passes, timeline: 'PASSES', color: '#8E24AA', replace: true, scope: $openc3_scope)
+      normalized = passes.map do |pass|
+        pass = pass.transform_keys(&:to_s)
+        start = _cal_to_time(pass.delete('start'))
+        stop = _cal_to_time(pass.delete('stop'))
+        raise "Pass requires both a start and a stop: #{pass}" if start.nil? or stop.nil?
+        raise "Pass start #{start} is not before stop #{stop}" if start >= stop
+        { 'start' => start, 'stop' => stop, 'data' => pass }
+      end
+      return { 'created' => 0, 'deleted' => 0, 'skipped' => [] } if normalized.empty?
+
+      # Create the timeline on first use so callers don't have to
+      unless list_timelines(scope: scope).any? { |t| t['name'] == timeline }
+        create_timeline(timeline, color: color, scope: scope)
+      end
+
+      normalized.sort_by! { |pass| pass['start'] }
+      range_start = normalized.first['start']
+      range_stop = normalized.last['stop']
+
+      deleted = 0
+      if replace
+        existing = get_timeline_activities(timeline, start: range_start.to_datetime.iso8601,
+                                           stop: range_stop.to_datetime.iso8601, scope: scope)
+        existing.each do |activity|
+          # Only clear passes - a command or script scheduled inside a pass
+          # window belongs to the operator, not to the propagation run.
+          next unless activity['kind'] == 'reserve'
+          delete_timeline_activity(timeline, activity['start'], activity['uuid'], scope: scope)
+          deleted += 1
+        end
+      end
+
+      created = 0
+      skipped = []
+      now = Time.now
+      normalized.each do |pass|
+        # Activities cannot be created in the past, so a pass already underway
+        # is reported rather than raising and abandoning the rest of the set.
+        if pass['start'] <= now
+          skipped << { 'start' => pass['start'], 'stop' => pass['stop'], 'reason' => 'already started' }
+          next
+        end
+        create_timeline_activity(timeline, kind: 'reserve', start: pass['start'], stop: pass['stop'],
+                                 data: pass['data'], scope: scope)
+        created += 1
+      end
+      return { 'created' => created, 'deleted' => deleted, 'skipped' => skipped }
+    end
+
+    # Accepts the several shapes a pass time can arrive in from a propagator
+    def _cal_to_time(value)
+      return nil if value.nil?
+      case value
+      when Time then value
+      when DateTime, Date then value.to_time
+      when Numeric then Time.at(value)
+      when String then Time.parse(value)
+      else
+        raise "Cannot interpret #{value.inspect} as a time"
+      end
     end
 
     # Helper method to handle the response

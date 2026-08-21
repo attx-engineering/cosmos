@@ -1,0 +1,39 @@
+# encoding: ascii-8bit
+
+###############################################################################
+# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+#
+# This software and associated documentation (the "Software") are the
+# proprietary and confidential information of ATTX, Inc. The Software is
+# furnished under a license agreement between ATTX and the user organization
+# and may be used or copied only in accordance with the terms of the agreement.
+# Refer to 'license/attx_license.adoc' for standard license terms.
+#
+# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
+# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
+# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
+# transmitted in any form or by any means, for any purpose, without the express
+# written permission of ATTX, Inc.
+###############################################################################
+
+PLUGIN_NAME = Dir['*.gemspec'][0].split('.')[0..-2].join('.')
+
+task :require_version do
+  if ENV['VERSION']
+    if ENV['VERSION'] =~ /-/
+      # Add Timestamp to prerelease versions
+      ENV['VERSION'] = ENV['VERSION'] + "." + Time.now.utc.strftime("%Y%m%d%H%M%S")
+    end
+  else
+    puts "VERSION is required: rake <task> VERSION=X.X.X"
+    exit 1
+  end
+end
+
+task :build => [:require_version] do
+  _, platform, *_ = RUBY_PLATFORM.split("-")
+  if platform == 'mswin32' or platform == 'mingw32'
+    puts "Warning: Building gem on Windows will lose file permissions"
+  end
+  system("gem build #{PLUGIN_NAME}")
+end

@@ -114,6 +114,7 @@
       v-if="showActivityUpdate"
       v-model="showActivityUpdate"
       :activity="editActivity"
+      :timelines="timelines"
       :time-zone="timeZone"
       @update="updateActivity"
     />
@@ -160,6 +161,10 @@ export default {
     events: {
       type: Array,
       required: true,
+    },
+    timelines: {
+      type: Array,
+      default: () => [],
     },
     modelValue: {
       type: Boolean,
