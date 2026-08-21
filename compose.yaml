@@ -260,6 +260,40 @@ services:
       REQUESTS_CA_BUNDLE: "/devel/cacert.pem"
       NODE_EXTRA_CA_CERTS: "/devel/cacert.pem"
 
+  # Identity provider for role based access control.
+  #
+  # Running this container does NOT switch RBAC on. COSMOS only enforces roles
+  # when OPENC3_KEYCLOAK_URL is set in .env - until then the shared password
+  # still applies. That ordering is deliberate: bring Keycloak up, create your
+  # users and assign roles, and only then enable enforcement. Enabling it with
+  # no admin user assigned would lock everyone out.
+  openc3-keycloak:
+    image: "quay.io/keycloak/keycloak:26.0"
+    command: ["start-dev", "--import-realm", "--http-port=8080"]
+    restart: "unless-stopped"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - "./openc3-keycloak/realm-openc3.json:/opt/keycloak/data/import/realm-openc3.json:z"
+      - "./openc3-keycloak/themes:/opt/keycloak/themes:z"
+      - "openc3-keycloak-v:/opt/keycloak/data"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      # Embedded dev database. Move to an external Postgres before production -
+      # losing this volume loses every user account.
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${OPENC3_KEYCLOAK_ADMIN_USERNAME:-admin}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${OPENC3_KEYCLOAK_ADMIN_PASSWORD:-admin}
+      - KC_HEALTH_ENABLED=true
+      # Served behind traefik at /auth, so Keycloak must generate its URLs with
+      # that prefix or every redirect and asset path comes back wrong
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KC_PROXY_HEADERS=xforwarded
+      - KC_HOSTNAME_STRICT=false
+
   openc3-cosmos-init:
     user: "${OPENC3_USER_ID:-1001}:${OPENC3_GROUP_ID:-1001}"
     image: "${OPENC3_REGISTRY}/${OPENC3_NAMESPACE}/openc3-cosmos-init${OPENC3_IMAGE_SUFFIX}:${OPENC3_TAG}"
@@ -296,6 +330,7 @@ services:
 
 volumes:
   # openc3-tsdb-v: {}
+  openc3-keycloak-v: {}
   openc3-redis-v: {}
   openc3-redis-ephemeral-v: {}
   openc3-bucket-v: {}

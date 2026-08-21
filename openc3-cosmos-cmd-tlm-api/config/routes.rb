@@ -241,6 +241,8 @@ Rails.application.routes.draw do
     get "/info" => "info#info"
 
     resources :roles, only: [:index, :create]
+    # NOTE: must precede /roles/:id so 'permissions' isn't matched as an id
+    get '/roles/permissions', to: 'roles#permissions'
     get '/roles/:id', to: 'roles#show', id: /[^\/]+/
     match '/roles/:id', to: 'roles#update', id: /[^\/]+/, via: [:patch, :put]
     delete '/roles/:id', to: 'roles#destroy', id: /[^\/]+/

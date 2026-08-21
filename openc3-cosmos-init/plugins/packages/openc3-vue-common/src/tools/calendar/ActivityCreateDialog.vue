@@ -330,7 +330,9 @@ export default {
     modelValue: Boolean,
     timelines: {
       type: Array,
-      required: true,
+      // Editing an existing activity doesn't need the list - the activity
+      // already knows its timeline - so this is optional rather than required.
+      default: () => [],
     },
     activity: {
       type: Object,
