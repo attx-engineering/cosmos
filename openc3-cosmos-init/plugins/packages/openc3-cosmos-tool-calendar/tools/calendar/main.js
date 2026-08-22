@@ -1,0 +1,1 @@
+System.register(["vue","./main-11d022e53d4187183e0a.js","vue-router","single-spa","vuex","vuetify"],function(t,e){"use strict";return{setters:[null,u=>{t({bootstrap:u.h,mount:u.i,unmount:u.u})},null,null,null,null],execute:function(){}}});

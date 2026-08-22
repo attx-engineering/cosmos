@@ -13,7 +13,7 @@
 # GNU Affero General Public License for more details.
 
 # Modified by OpenC3, Inc.
-# All changes Copyright 2024, OpenC3, Inc.
+# All changes Copyright 2026, OpenC3, Inc.
 # All Rights Reserved
 #
 # This file may also be used under the terms of a commercial license
@@ -241,6 +241,14 @@ export default {
             rows.push(`${key}: ${value}`),
           )
           data = rows.join(', ')
+          break
+        case 'activity':
+          // Prefer the activity's own detail (command, script, or the
+          // satellite-pass metadata on a reserve) when the caller supplies it,
+          // falling back to the timeline name for callers that do not.
+          if (event.summary) {
+            data = event.summary
+          }
           break
       }
       return data

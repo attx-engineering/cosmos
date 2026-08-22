@@ -456,6 +456,11 @@ RSpec.describe ActivityController, type: :controller do
       end
       post :multi_destroy, params: {"scope" => "DEFAULT", "multi" => destroy_post_array}
       expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body, allow_nan: true, create_additions: true)
+      expect(json.length).to eql(10)
+      json.each do |hash|
+        expect(hash["status"]).to eql("removed")
+      end
       get :index, params: {"scope" => "DEFAULT", "name" => "test"}
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body, allow_nan: true, create_additions: true)

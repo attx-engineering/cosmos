@@ -197,6 +197,16 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Hidden picker for File > Import Passes (a passes.json from WarpTwin) -->
+    <input
+      ref="passesInput"
+      type="file"
+      accept=".json,application/json"
+      style="display: none"
+      data-test="import-passes-input"
+      @change="onPassesFileSelected"
+    />
   </div>
 </template>
 
@@ -340,6 +350,18 @@ export default {
               icon: 'mdi-timeline-plus',
               command: () => {
                 this.showTimelineCreate = true
+              },
+            },
+            {
+              divider: true,
+            },
+            {
+              label: 'Import Passes...',
+              icon: 'mdi-satellite-variant',
+              command: () => {
+                // Reset first so re-selecting the same file still fires change
+                this.$refs.passesInput.value = null
+                this.$refs.passesInput.click()
               },
             },
           ],
@@ -597,9 +619,42 @@ export default {
           return activity.data.command
         case 'script':
           return activity.data.script
+        case 'reserve':
+          // Satellite pass windows are published as 'reserve' activities (see
+          // create_pass_activities in the COSMOS script API), so summarize the
+          // pass metadata rather than just showing the word "reserve".
+          return this.passSummary(activity.data)
         default:
           return activity.kind
       }
+    },
+    // Build a readable label for a 'reserve' activity from whatever metadata is
+    // stored on it. For a satellite pass that is the satellite, ground station
+    // and peak elevation; for a plain reserved block it is just "Reserved".
+    passSummary: function (data) {
+      data = data || {}
+      const parts = []
+      if (data.satellite && data.ground_station) {
+        parts.push(`${data.satellite} → ${data.ground_station}`)
+      } else if (data.satellite || data.ground_station) {
+        parts.push(data.satellite || data.ground_station)
+      }
+      const elevation = data.max_elevation ?? data.elevation
+      if (elevation !== undefined && elevation !== null && elevation !== '') {
+        const degrees = Math.round(Number(elevation))
+        if (!Number.isNaN(degrees)) {
+          parts.push(`${degrees}° el`)
+        }
+      }
+      if (parts.length) {
+        return parts.join(' · ')
+      }
+      // Some other reserve metadata: show it instead of a bare label. The empty
+      // 'reserve' marker written by the create dialog carries no information.
+      const extra = Object.entries(data)
+        .filter(([key, value]) => key !== 'reserve' && value !== '' && value != null)
+        .map(([key, value]) => `${key}: ${value}`)
+      return extra.length ? extra.join(', ') : 'Reserved'
     },
     shift: function (direction) {
       if (this.view === 'month') {
@@ -624,6 +679,127 @@ export default {
     openEvent: function (events) {
       this.selectedEvents = Array.isArray(events) ? events : [events]
       this.showEventList = true
+    },
+    // Read a passes.json file (as produced by WarpTwin's groundstation_passes
+    // example) and hand its contents to importPasses. This is the GUI
+    // equivalent of the create_pass_activities script API.
+    onPassesFileSelected: function (event) {
+      const file = event.target.files && event.target.files[0]
+      // Clear the value so selecting the same file again still fires change
+      event.target.value = null
+      if (!file) {
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = () => {
+        let passes
+        try {
+          passes = JSON.parse(reader.result)
+        } catch {
+          this.$notify.caution({
+            title: 'Import failed',
+            body: `${file.name} is not valid JSON`,
+          })
+          return
+        }
+        if (!Array.isArray(passes)) {
+          this.$notify.caution({
+            title: 'Import failed',
+            body: 'Expected a JSON array of pass objects',
+          })
+          return
+        }
+        this.importPasses(passes, file.name)
+      }
+      reader.readAsText(file)
+    },
+    // Publish satellite passes onto the PASSES timeline as 'reserve' activities.
+    // Re-importing replaces the reserves in the imported range so updated
+    // propagation doesn't stack duplicates; commands and scripts scheduled
+    // inside a pass are left untouched.
+    importPasses: async function (passes, filename) {
+      const timeline = 'PASSES'
+      const color = '#8E24AA'
+      // Separate each pass into its times and the metadata shown on the activity
+      const prepared = []
+      for (const pass of passes) {
+        if (!pass || pass.start == null || pass.stop == null) {
+          this.$notify.caution({
+            title: 'Import failed',
+            body: 'Every pass needs a start and a stop',
+          })
+          return
+        }
+        const { start, stop, ...data } = pass
+        prepared.push({ start, stop, data })
+      }
+      if (prepared.length === 0) {
+        this.$notify.normal({
+          title: 'No passes',
+          body: `${filename} contained no passes`,
+        })
+        return
+      }
+
+      try {
+        // Create the timeline on first import so the user doesn't have to
+        if (!this.timelines.find((t) => t.name === timeline)) {
+          await Api.post('/openc3-api/timeline', {
+            data: { name: timeline, color },
+          })
+        }
+
+        const startTimes = prepared.map((p) => new Date(p.start).getTime())
+        const stopTimes = prepared.map((p) => new Date(p.stop).getTime())
+        const rangeStart = new Date(Math.min(...startTimes)).toISOString()
+        const rangeStop = new Date(Math.max(...stopTimes)).toISOString()
+        const existing = await Api.get(
+          `/openc3-api/timeline/${timeline}/activities`,
+          { params: { start: rangeStart, stop: rangeStop } },
+        )
+        const toDelete = (existing.data || []).filter(
+          (activity) => activity.kind === 'reserve',
+        )
+        if (toDelete.length > 0) {
+          await Promise.all(
+            toDelete.map((activity) =>
+              Api.delete(
+                `/openc3-api/timeline/${timeline}/activity/${activity.start}/${activity.uuid}`,
+              ),
+            ),
+          )
+        }
+
+        const multi = prepared.map((p) => ({
+          name: timeline,
+          start: new Date(p.start).toISOString(),
+          stop: new Date(p.stop).toISOString(),
+          kind: 'reserve',
+          data: p.data,
+        }))
+        const response = await Api.post(
+          '/openc3-api/timeline/activities/create',
+          { data: { multi } },
+        )
+        // multi_create returns one entry per input; failures carry status 'error'
+        // (e.g. a pass whose start is already in the past, which can't be scheduled).
+        const results = response.data || []
+        const failed = results.filter((r) => r.status === 'error').length
+        const created = results.length - failed
+        this.$notify.normal({
+          title: 'Imported passes',
+          body:
+            `${created} pass(es) added to ${timeline}` +
+            (toDelete.length ? `, ${toDelete.length} replaced` : '') +
+            (failed ? `, ${failed} skipped (e.g. already past)` : ''),
+        })
+        this.loadTimelines().then(() => this.refresh())
+      } catch (error) {
+        this.$notify.caution({
+          title: 'Import failed',
+          body: error.response?.data?.message || error.message || 'Unknown error',
+        })
+      }
     },
     createTimeline: function () {
       this.timelineError = null

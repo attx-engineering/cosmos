@@ -419,7 +419,7 @@ class ActivityController < ApplicationController
       begin
         result = @model_class.destroy(name: input[:name], score: input[:id].to_i, uuid: input[:uuid], scope: params[:scope])
         OpenC3::Logger.info("Activity destroyed: #{input['name']}", scope: params[:scope], user: username())
-        ret << { status: 'removed', removed: result, input: input, type: e.class }
+        ret << { status: 'removed', removed: result, input: input }
       rescue StandardError => e # includes OpenC3::ActivityInputError
         log_error(e)
         ret << { status: 'error', message: e.message, input: input, type: e.class, err: 400 }
