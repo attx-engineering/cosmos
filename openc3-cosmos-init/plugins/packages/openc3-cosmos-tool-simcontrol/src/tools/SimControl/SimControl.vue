@@ -267,6 +267,8 @@ export default {
       title: 'Sim Control',
       api: null,
       address: '',
+      // Correlates a reply with the command that caused it; see awaitAck.
+      nextSequence: 0,
       value: '',
       status: '',
       statusError: false,
@@ -556,36 +558,33 @@ export default {
       }
       return null
     },
-    // How many acknowledgements the interface has received so far.
+    // Wait for the acknowledgement of one specific command.
     //
-    // Read before sending and compared after, because reading the ACK packet
-    // without it returns whatever the *last* command produced -- so a command
-    // that is never acknowledged would be reported with the previous one's
-    // result, which is worse than reporting nothing. Same reasoning as the
-    // sequence number on a WarpWire channel: a value that has not changed is
-    // not a new answer.
-    async ackCount() {
-      try {
-        return await this.api.tlm(TARGET_NAME, ACK_PACKET, 'RECEIVED_COUNT')
-      } catch (error) {
-        // No acknowledgement has ever arrived, so the packet has no value yet.
-        return 0
-      }
-    },
-    // Wait for an acknowledgement newer than `since`, or give up.
-    async awaitAck(since) {
+    // Matched on the sequence number the command carried and the simulation
+    // echoes, not on "an acknowledgement arrived". Two commands to one address
+    // otherwise produce two identical replies, and the second could be reported
+    // with the first's result -- setting a value twice is harmless in the sim,
+    // but telling the operator the wrong one succeeded is not.
+    async awaitAck(sequence) {
       const deadline = Date.now() + ACK_TIMEOUT_MS
       while (Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, ACK_POLL_MS))
-        const count = await this.ackCount()
-        if (count > since) {
-          const [ackAddress, accepted, error] = await Promise.all([
-            this.api.tlm(TARGET_NAME, ACK_PACKET, 'ADDRESS'),
-            this.api.tlm(TARGET_NAME, ACK_PACKET, 'ACCEPTED'),
-            this.api.tlm(TARGET_NAME, ACK_PACKET, 'ERROR'),
-          ])
-          return { address: ackAddress, accepted, error }
+        let seen
+        try {
+          seen = await this.api.tlm(TARGET_NAME, ACK_PACKET, 'SEQUENCE')
+        } catch (error) {
+          // No acknowledgement has ever arrived, so the packet has no value.
+          continue
         }
+        // Number() because an absent sequence decodes as null, which must not
+        // match: this tool's first send is 1, never 0.
+        if (Number(seen) !== sequence) continue
+        const [ackAddress, accepted, error] = await Promise.all([
+          this.api.tlm(TARGET_NAME, ACK_PACKET, 'ADDRESS'),
+          this.api.tlm(TARGET_NAME, ACK_PACKET, 'ACCEPTED'),
+          this.api.tlm(TARGET_NAME, ACK_PACKET, 'ERROR'),
+        ])
+        return { address: ackAddress, accepted, error }
       }
       return null
     },
@@ -594,19 +593,25 @@ export default {
       this.sending = true
       const address = this.address.trim()
       const value = this.parsedValue
-      const before = this.ackCount()
+      // Cycles through 1..2^32-1, which is what the command field holds. Zero
+      // is skipped on purpose: an absent sequence decodes as null, and awaitAck
+      // reads that as 0, so 0 has to stay unusable as a real number. A value
+      // that has come round again cannot collide with one still outstanding --
+      // the wait below gives up after a few seconds, and four billion sends do
+      // not happen in that window.
+      const sequence = (this.nextSequence = (this.nextSequence % 0xffffffff) + 1)
       this.api
         .cmd(
           TARGET_NAME,
           COMMAND_NAME,
-          { ADDRESS: address, VALUE: value },
+          { ADDRESS: address, VALUE: value, SEQUENCE: sequence },
           // Handled below, so don't let the interceptor pop its own error
           { 'Ignore-Errors': '428 500' },
         )
         .then(async () => {
           // The command reached COSMOS. Whether the simulation applied it is a
           // different question, and the one the operator actually asked.
-          const ack = await this.awaitAck(await before)
+          const ack = await this.awaitAck(sequence)
 
           if (ack === null) {
             this.status =

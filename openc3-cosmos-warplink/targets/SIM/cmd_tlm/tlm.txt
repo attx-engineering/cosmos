@@ -53,3 +53,7 @@ TELEMETRY SIM ACK BIG_ENDIAN "Result of the last SET_VALUE the simulation receiv
   # by hand.
   APPEND_ITEM ERROR 2048 STRING "Why the value was refused"
     KEY $.error
+  # Echoed from the command. Absent when the command carried none, which is how
+  # a sender that does not use sequences keeps working unchanged.
+  APPEND_ITEM SEQUENCE 32 UINT "The SET_VALUE sequence this answers"
+    KEY $.sequence

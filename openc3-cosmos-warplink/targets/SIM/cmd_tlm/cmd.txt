@@ -45,8 +45,14 @@
 
 COMMAND SIM SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
   ACCESSOR JsonAccessor
-  TEMPLATE '{"address":"","value":0}'
+  TEMPLATE '{"address":"","value":0,"sequence":0}'
   APPEND_PARAMETER ADDRESS 2048 STRING "" "Simulation address, e.g. .exc.spacecraft.params.mass"
     KEY $.address
   APPEND_PARAMETER VALUE 64 ANY 0 "Value to set, sent as its natural JSON type"
     KEY $.value
+  # Echoed back untouched in SIM ACK. The simulation makes no use of it --
+  # setting a value is idempotent, so a repeat is harmless there -- but without
+  # it two commands to one address produce two identical acknowledgements and
+  # the sender cannot tell which answers which.
+  APPEND_PARAMETER SEQUENCE 32 UINT 0 "Sender's correlation number, echoed in SIM ACK"
+    KEY $.sequence
