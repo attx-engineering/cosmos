@@ -30,6 +30,11 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 ROOT = Path(__file__).resolve().parent
+#: Where a descriptor is found, from component-descriptor.md section 10. One
+#: name for every product, which is what lets the hub identify a tree without
+#: knowing anything about the product in it.
+WELL_KNOWN_NAME = "warpware-component.json"
+
 # The declared half, named so it cannot be mistaken for the emitted descriptor.
 # They collided at first -- the scanner found the manifest, failed to parse it as
 # a descriptor, and silently fell back to probing, which is exactly the quiet
@@ -146,7 +151,10 @@ def check_launch(descriptor):
 
 def main():
     parser = argparse.ArgumentParser(description="Emit WarpLink's component descriptor.")
-    parser.add_argument("--out", help="Write here instead of stdout.")
+    parser.add_argument(
+        "--out",
+        help="Write here instead of the component root's "
+             "warpware-component.json. Use - for stdout.")
     args = parser.parse_args()
 
     try:
@@ -160,10 +168,15 @@ def main():
         return 1
 
     text = json.dumps(descriptor, indent=2) + "\n"
-    if args.out:
-        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        Path(args.out).write_text(text, encoding="utf-8")
-        print(f"wrote {args.out}")
+    # Section 10 is where the hub looks. An emitter whose default lands
+    # somewhere else means every caller has to know the convention separately,
+    # and one of them will not.
+    out = ROOT / WELL_KNOWN_NAME if args.out is None else (
+        None if args.out == "-" else Path(args.out))
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")
+        print(f"wrote {out}")
         print(f"  warplink {descriptor['version']['id']}")
         print(f"  provides: {', '.join(descriptor['provides']) or 'nothing'}")
         print(f"  requires: {', '.join(r['capability'] for r in descriptor['requires'])}")
