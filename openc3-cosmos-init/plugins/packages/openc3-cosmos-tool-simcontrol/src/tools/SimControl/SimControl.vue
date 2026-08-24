@@ -248,6 +248,12 @@ import { TopBar } from '@openc3/vue-common/components'
 // ships one). The interface mapped to the target owns the simulation port.
 const TARGET_NAME = 'SIM'
 const COMMAND_NAME = 'SET_VALUE'
+// The simulation replies on the same socket; the SIM target decodes it as ACK.
+const ACK_PACKET = 'ACK'
+// Long enough for a sim stepping at a human rate to drain its command socket
+// and reply, short enough that an operator does not think the tool has hung.
+const ACK_TIMEOUT_MS = 3000
+const ACK_POLL_MS = 200
 const MAX_HISTORY = 20
 // Where the last-loaded graph tree is cached so it survives page reloads.
 const TREE_STORAGE_KEY = 'simcontrol_graph_tree'
@@ -550,11 +556,45 @@ export default {
       }
       return null
     },
+    // How many acknowledgements the interface has received so far.
+    //
+    // Read before sending and compared after, because reading the ACK packet
+    // without it returns whatever the *last* command produced -- so a command
+    // that is never acknowledged would be reported with the previous one's
+    // result, which is worse than reporting nothing. Same reasoning as the
+    // sequence number on a WarpWire channel: a value that has not changed is
+    // not a new answer.
+    async ackCount() {
+      try {
+        return await this.api.tlm(TARGET_NAME, ACK_PACKET, 'RECEIVED_COUNT')
+      } catch (error) {
+        // No acknowledgement has ever arrived, so the packet has no value yet.
+        return 0
+      }
+    },
+    // Wait for an acknowledgement newer than `since`, or give up.
+    async awaitAck(since) {
+      const deadline = Date.now() + ACK_TIMEOUT_MS
+      while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, ACK_POLL_MS))
+        const count = await this.ackCount()
+        if (count > since) {
+          const [ackAddress, accepted, error] = await Promise.all([
+            this.api.tlm(TARGET_NAME, ACK_PACKET, 'ADDRESS'),
+            this.api.tlm(TARGET_NAME, ACK_PACKET, 'ACCEPTED'),
+            this.api.tlm(TARGET_NAME, ACK_PACKET, 'ERROR'),
+          ])
+          return { address: ackAddress, accepted, error }
+        }
+      }
+      return null
+    },
     send() {
       if (this.sendDisabled) return
       this.sending = true
       const address = this.address.trim()
       const value = this.parsedValue
+      const before = this.ackCount()
       this.api
         .cmd(
           TARGET_NAME,
@@ -563,8 +603,37 @@ export default {
           // Handled below, so don't let the interceptor pop its own error
           { 'Ignore-Errors': '428 500' },
         )
-        .then(() => {
-          this.status = `Sent ${this.preview}`
+        .then(async () => {
+          // The command reached COSMOS. Whether the simulation applied it is a
+          // different question, and the one the operator actually asked.
+          const ack = await this.awaitAck(await before)
+
+          if (ack === null) {
+            this.status =
+              `Sent ${this.preview}, but the simulation did not acknowledge it. ` +
+              `It may not be running, or may not be reachable on this interface.`
+            this.statusError = true
+            this.addHistory(address, value, false, 'no acknowledgement')
+            this.$notify.caution({
+              title: `No acknowledgement for ${address}`,
+              body: 'The command was sent. Whether it was applied is unknown.',
+            })
+            return
+          }
+
+          if (!ack.accepted) {
+            const reason = ack.error || 'the simulation gave no reason'
+            this.status = `Refused: ${reason}`
+            this.statusError = true
+            this.addHistory(address, value, false, reason)
+            this.$notify.caution({
+              title: `${address} was not set`,
+              body: reason,
+            })
+            return
+          }
+
+          this.status = `Applied ${this.preview}`
           this.statusError = false
           this.addHistory(address, value, true)
           this.$notify.normal({

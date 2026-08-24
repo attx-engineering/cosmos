@@ -33,22 +33,31 @@
 # a block below and change the target name, the interface name, and the ports.
 
 # ---------------------------------------------------------------------------
-# SIM - simulation value injection
+# SIM - simulation value injection, and the simulation's reply
 #
-# Not a WarpOS build target: this is a send-only JSON channel used by the Sim
-# Control tool to set simulation parameters, on its own port so it never mixes
-# with flight software command traffic.  No read port - the simulation does not
-# reply on this socket.
+# Not a WarpOS build target: this is a JSON channel used by the Sim Control
+# tool to set simulation parameters, on its own port so it never mixes with
+# flight software command traffic.
+#
+# Read and write share one socket, and must.  The simulation replies to the
+# address its datagram arrived from, which is this interface's *source* port --
+# so read_port is set equal to write_src_port.  COSMOS notices that equality and
+# opens a single UdpReadWriteSocket (udp_interface.py connect()); give them
+# different numbers and it opens two sockets, the reply lands on the write
+# socket nobody reads, and the acknowledgement is silently lost.
+#
+# See warpware_hub docs/contracts/sim-control.md section 5.
 # ---------------------------------------------------------------------------
 VARIABLE sim_enable            true
 VARIABLE sim_host              host.docker.internal
 VARIABLE sim_write_port        5009
+VARIABLE sim_ack_port          5010
 
 <% if sim_enable.to_s.strip.downcase == "true" %>
 TARGET SIM SIM
 
-# Write only UDP - read_port is None, so COSMOS never listens on this socket.
 # Raw JSON datagrams: no CRC and no check_pattern protocols here on purpose.
-INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_write_port %> None None None 128 10.0 None # Simulation JSON UDP
+# Arguments: hostname, write_dest_port, read_port, write_src_port, ...
+INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_write_port %> <%= sim_ack_port %> <%= sim_ack_port %> None 128 10.0 None # Simulation JSON UDP
   MAP_TARGET SIM
 <% end %>

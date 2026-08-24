@@ -1,0 +1,55 @@
+###############################################################################
+# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+#
+# This software and associated documentation (the "Software") are the
+# proprietary and confidential information of ATTX, Inc. The Software is
+# furnished under a license agreement between ATTX and the user organization
+# and may be used or copied only in accordance with the terms of the agreement.
+# Refer to 'license/attx_license.adoc' for standard license terms.
+#
+# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
+# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
+# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
+# transmitted in any form or by any means, for any purpose, without the express
+# written permission of ATTX, Inc.
+###############################################################################
+
+#
+# Acknowledgement of a SET_VALUE command, sent back by the simulation.
+#
+# The simulation replies on the socket the command arrived on, to the address
+# recvfrom handed it -- so this is decoded from the same UDP interface that
+# writes SET_VALUE, with read_port equal to write_src_port. Without that
+# equality COSMOS opens two sockets and the reply lands on neither.
+#
+# See warpware_hub docs/contracts/sim-control.md section 5.
+###############################################################################
+
+TELEMETRY SIM ACK BIG_ENDIAN "Result of the last SET_VALUE the simulation received"
+  ACCESSOR JsonAccessor
+  # Deliberately NOT an APPEND_ID_ITEM, though the schema version is the obvious
+  # thing to identify on.
+  #
+  # Identification never works for a JsonAccessor packet: Packet.identify() and
+  # Telemetry.identify() both read id items out of an explicitly-passed buffer,
+  # and JsonAccessor returns None for that -- it reads from the packet's own
+  # buffer instead. Verified against a minimal control packet, so this is how
+  # COSMOS behaves rather than anything about this definition. A packet with an
+  # id item that can never be read matches nothing, and the acknowledgement
+  # would arrive as UNKNOWN.
+  #
+  # With no id items, identify() returns true unconditionally, which is correct
+  # here: SIM has exactly one telemetry packet and its interface carries nothing
+  # else. Version checking therefore belongs to whoever reads this item, not to
+  # packet routing.
+  APPEND_ITEM SCHEMA_VERSION 32 INT "sim-control contract version"
+    KEY $.schemaVersion
+  APPEND_ITEM ADDRESS 2048 STRING "The address the simulation acted on"
+    KEY $.address
+  APPEND_ITEM ACCEPTED 8 BOOL "Whether the value was applied"
+    KEY $.accepted
+  # Absent when ACCEPTED is true. Names which of the several ways a command can
+  # fail actually happened -- an operator told only "failed" checks all of them
+  # by hand.
+  APPEND_ITEM ERROR 2048 STRING "Why the value was refused"
+    KEY $.error
