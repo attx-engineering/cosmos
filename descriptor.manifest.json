@@ -1,0 +1,96 @@
+{
+  "comment": [
+    "WarpLink's half of its component descriptor: everything that cannot be",
+    "read out of the tree. No version appears here -- 'requires[].versionFrom'",
+    "says where the consumed cmd-tlm version lives and the emitter reads it,",
+    "because a version typed by a person is a claim about the code rather than",
+    "the code."
+  ],
+  "component": "warplink",
+  "displayName": "WarpLink",
+  "provides": {
+    "services": [
+      "ground.operations",
+      "telemetry.storage",
+      "auth.keycloak"
+    ]
+  },
+  "requires": [
+    {
+      "contract": "cmd-tlm",
+      "role": "consume",
+      "optional": false,
+      "versionFrom": {
+        "file": "CosmosUpdateCmdTlm.py",
+        "pattern": "CMD_TLM_SCHEMA_VERSION\\s*=\\s*(\\d+)"
+      },
+      "why": [
+        "Not optional: without a cmd_tlm.json there is no command and telemetry",
+        "dictionary, and WarpLink has nothing to present. The version is read",
+        "from the constant the loader checks against, so the descriptor cannot",
+        "claim to read a schema this tool would refuse."
+      ]
+    }
+  ],
+  "artifacts": {
+    "compose": "compose.yaml"
+  },
+  "launch": {
+    "service": {
+      "kind": "compose",
+      "file": "compose.yaml",
+      "ports": [
+        {
+          "service": "operator",
+          "preferred": 2900,
+          "scope": "local"
+        },
+        {
+          "service": "operator-tls",
+          "preferred": 2943,
+          "scope": "local"
+        },
+        {
+          "service": "warp-cube-telemetry",
+          "preferred": 5005,
+          "scope": "local"
+        },
+        {
+          "service": "nsns-telemetry",
+          "preferred": 5007,
+          "scope": "local"
+        },
+        {
+          "service": "keycloak",
+          "preferred": 8080,
+          "scope": "local"
+        }
+      ],
+      "why": [
+        "Ports transcribed from this repo's compose.yaml rather than chosen. Every",
+        "one is loopback-bound here: 2900 and 2943 (Traefik GUI), 5005/udp",
+        "(WARP_CUBE telemetry), 5007/udp (NSNS telemetry), 8080 (Keycloak).",
+        "",
+        "That is a change worth recording. In the previous deployment repo the FSW",
+        "telemetry and command ports were '5005:5005/udp' and '5006:5006/udp' with",
+        "no host prefix -- every interface -- while the authenticated GUI was",
+        "loopback only. The unauthenticated UDP path was the exposed one. This repo",
+        "binds all of them to 127.0.0.1, and 5006 is no longer published at all.",
+        "",
+        "Declaring them means the hub prints the scopes rather than leaving them in",
+        "the presence or absence of a '127.0.0.1:' prefix in YAML, which is where",
+        "the earlier inversion went unnoticed."
+      ]
+    }
+  },
+  "tools": {
+    "cmdtlm.generate": {
+      "run": [
+        "python3",
+        "CosmosUpdateCmdTlm.py"
+      ],
+      "consumes": "contract:cmd-tlm@2",
+      "why": "Turns a cmd_tlm.json into the COSMOS target definition WarpLink serves."
+    }
+  }
+}

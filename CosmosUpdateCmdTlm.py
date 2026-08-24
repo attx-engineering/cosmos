@@ -93,6 +93,13 @@ def _strip_header(template: str) -> str:
 # ---------------------------------------------------------------------------
 # CCSDS APID flag masks
 # ---------------------------------------------------------------------------
+# The cmd_tlm.json schema this tool reads. Named rather than written inline at
+# the check below, because WarpLink's component descriptor declares the contract
+# version it consumes and reads that declaration from here -- a number typed
+# into a descriptor is a claim about this file rather than this file.
+# See warpware_hub docs/contracts/cmd-tlm.md.
+CMD_TLM_SCHEMA_VERSION = 2
+
 _TLM_APID_MASK = 0x0800   # telemetry flag
 _CMD_APID_MASK = 0x1800   # command + secondary-header-present flags
 
@@ -444,10 +451,11 @@ class CosmosUpdateCmdTlm:
             self._data = json.load(f)
 
         schema = self._data.get("schema_version", 1)
-        if schema != 2:
+        if schema != CMD_TLM_SCHEMA_VERSION:
             raise ValueError(
                 f"Unsupported cmd_tlm.json schema_version {schema}. "
-                "Expected 2 (produced by buildWarpLinkCmdTlmJson.py)."
+                f"Expected {CMD_TLM_SCHEMA_VERSION} (produced by "
+                "buildWarpLinkCmdTlmJson.py)."
             )
 
         self._target = self._data["cosmos_target"]
