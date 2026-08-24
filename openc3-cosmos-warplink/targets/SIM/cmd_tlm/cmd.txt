@@ -39,7 +39,7 @@
 # not a model or a signal group.  params/inputs/outputs are all addressable, but
 # outputs are recomputed each step - set params/inputs for changes that stick.
 #
-# This target is hand written.  Unlike WARP_CUBE and NSNS it is not generated
+# This target is hand written.  Unlike other targets it is not generated
 # by CosmosUpdateCmdTlm.py, because it does not come from a WarpOS build.
 # ##############################################################################
 

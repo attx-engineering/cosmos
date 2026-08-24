@@ -100,6 +100,15 @@ def _strip_header(template: str) -> str:
 # See warpware_hub docs/contracts/cmd-tlm.md.
 CMD_TLM_SCHEMA_VERSION = 2
 
+# CFDP-packing telemetry: a bare CFDP PDU carries no APID at all (it's
+# identified by bitfields in the CFDP header itself, not a CCSDS wrapper --
+# see templates/cfdp_telemetry.txt), so it doesn't follow the normal
+# <<SHORT_NAME>>_<<PACKET_NAME>> naming convention either. There is exactly
+# one such packet, matching CFDP's own singular nature, so the COSMOS name
+# is a fixed protocol-level constant rather than derived per-app.
+# ---------------------------------------------------------------------------
+_CFDP_TLM_PACKET_NAME = "CFDP_PACKET"
+
 _TLM_APID_MASK = 0x0800   # telemetry flag
 _CMD_APID_MASK = 0x1800   # command + secondary-header-present flags
 
@@ -340,6 +349,25 @@ def _format_tlm_packets(template: str, target: str, pkt: dict, short_name: str) 
 # Command formatter
 # ---------------------------------------------------------------------------
 
+def _format_cfdp_tlm_packet(template: str, target: str, pkt: dict) -> str:
+    """
+    Render the fixed-format CFDP telemetry packet from templates/cfdp_telemetry.txt:
+    a bare CFDP PDU with no CCSDS wrapper, identified by ID_ITEMs on the CFDP
+    header's own bitfields (version / crc+large-file flags / segmentation +
+    entity-id-length prefix / sequence-number-length) instead of an APID.
+    This layout is entirely fixed by the CFDP spec as this codebase packs it
+    (StorageManager::packPdu -- 2-byte entity IDs, 2-byte sequence numbers),
+    so unlike _format_tlm_packets there are no per-field or per-registration
+    substitutions: one packet, one block, always the same shape.
+    """
+    pkt_str = template
+    pkt_str = pkt_str.replace("<<TARGET>>",      target)
+    pkt_str = pkt_str.replace("<<PACKET_NAME>>", _CFDP_TLM_PACKET_NAME)
+    pkt_str = pkt_str.replace("<<ENDIANNESS>>",  "BIG_ENDIAN")
+    pkt_str = pkt_str.replace("<<DESCRIPTION>>", pkt.get("description", ""))
+    return pkt_str
+
+
 def _format_cmd_parameter(field: dict, append_key: str = "APPEND_PARAMETER") -> str:
     """Format one command parameter (scalar or array element)."""
     cosmos_type, bits_per = _resolve_type(field)
@@ -426,6 +454,34 @@ def _format_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -
 # Main generator class
 # ---------------------------------------------------------------------------
 
+def _format_cfdp_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -> str:
+    """
+    Render a bare-CFDP-PDU command from templates/cfdp_command.txt: exactly
+    one field holding the raw, already-built CFDP PDU bytes (header + data +
+    the PDU's own inner CRC) -- no CCSDS wrapper, no separate outer CRC
+    parameter, and no APID (a bare CFDP PDU has none; CommandManager detects
+    it by the CFDP header's own byte pattern -- see potentialCfdpPacket() in
+    CommandManager.cpp). See templates/cfdp_command.txt for why the header
+    can't be decomposed into individual parameters the way telemetry's is.
+    """
+    cosmos_name = f"{short_name}_{pkt['name']}"
+    fields = pkt.get("fields", [])
+    if len(fields) != 1:
+        raise ValueError(
+            f"CFDP command packet '{pkt['name']}' must have exactly one field"
+            f" (the raw PDU bytes) -- found {len(fields)}"
+        )
+    fields_str = _format_cmd_parameter(fields[0])
+
+    pkt_str = template
+    pkt_str = pkt_str.replace("<<TARGET>>",            target)
+    pkt_str = pkt_str.replace("<<PACKET_NAME>>",       cosmos_name)
+    pkt_str = pkt_str.replace("<<ENDIANNESS>>",        "BIG_ENDIAN")
+    pkt_str = pkt_str.replace("<<DESCRIPTION>>",       pkt.get("description", ""))
+    pkt_str = pkt_str.replace("<<ADDITIONAL_FIELDS>>", fields_str)
+    return pkt_str
+
+
 class CosmosUpdateCmdTlm:
     """
     Generate COSMOS cmd.txt and tlm.txt from a warplink cmd_tlm.json.
@@ -469,6 +525,8 @@ class CosmosUpdateCmdTlm:
         plugin_txt=None,
         plugin_host=DEFAULT_PLUGIN_HOST,
         update_plugin=True,
+        cfdp_tlm_template=None,
+        cfdp_cmd_template=None,
     ):
         with open(cmd_tlm_json) as f:
             self._data = json.load(f)
@@ -487,6 +545,19 @@ class CosmosUpdateCmdTlm:
             self._tlm_template = _strip_header(f.read())
         with open(cmd_template) as f:
             self._cmd_template = _strip_header(f.read())
+
+        # CFDP templates default to siblings of the ordinary ones, so a caller
+        # that does not know CFDP exists still gets working CFDP output rather
+        # than a packet silently rendered as though it had a CCSDS wrapper.
+        if cfdp_tlm_template is None:
+            cfdp_tlm_template = Path(tlm_template).parent / "cfdp_telemetry.txt"
+        with open(cfdp_tlm_template) as f:
+            self._cfdp_tlm_template = _strip_header(f.read())
+
+        if cfdp_cmd_template is None:
+            cfdp_cmd_template = Path(tlm_template).parent / "cfdp_command.txt"
+        with open(cfdp_cmd_template) as f:
+            self._cfdp_cmd_template = _strip_header(f.read())
 
         target_dir          = Path(target_dir)
         self._out_dir       = target_dir / self._target / "cmd_tlm"
@@ -657,7 +728,12 @@ INTERFACE {interface} openc3/interfaces/udp_interface.py <%= {prefix}_host %> <%
                 if not app_tlm_written:
                     tlm_str += comment
                     app_tlm_written = True
-                tlm_str += _format_tlm_packets(self._tlm_template, self._target, pkt, short_name)
+                # A bare CFDP PDU has no CCSDS wrapper and no APID, so it takes
+                # a different template entirely rather than a variation of one.
+                if pkt.get("packing_scheme") == "cfdp":
+                    tlm_str += _format_cfdp_tlm_packet(self._cfdp_tlm_template, self._target, pkt)
+                else:
+                    tlm_str += _format_tlm_packets(self._tlm_template, self._target, pkt, short_name)
                 tlm_str += "\n"
 
             # -- All commands --
@@ -668,7 +744,10 @@ INTERFACE {interface} openc3/interfaces/udp_interface.py <%= {prefix}_host %> <%
                 if not app_cmd_written:
                     cmd_str += comment
                     app_cmd_written = True
-                cmd_str += _format_cmd_packet(self._cmd_template, self._target, pkt, short_name)
+                if pkt.get("packing_scheme") == "cfdp":
+                    cmd_str += _format_cfdp_cmd_packet(self._cfdp_cmd_template, self._target, pkt, short_name)
+                else:
+                    cmd_str += _format_cmd_packet(self._cmd_template, self._target, pkt, short_name)
                 cmd_str += "\n"
 
         self._setup_target_dir()
@@ -735,6 +814,18 @@ if __name__ == "__main__":
              "TARGET block; existing blocks are left alone",
     )
     parser.add_argument(
+        "--cfdp-tlm-template",
+        default="templates/cfdp_telemetry.txt",
+        help="Template for the bare-CFDP-PDU telemetry packet, used for "
+             'packets with packing_scheme == "cfdp"',
+    )
+    parser.add_argument(
+        "--cfdp-cmd-template",
+        default="templates/cfdp_command.txt",
+        help="Template for bare-CFDP-PDU commands, used for "
+             'packets with packing_scheme == "cfdp"',
+    )
+    parser.add_argument(
         "--no-plugin-txt",
         dest="update_plugin",
         action="store_false",
@@ -749,6 +840,8 @@ if __name__ == "__main__":
         args.target_dir,
         common_dir=args.common_dir,
         plugin_txt=args.plugin_txt,
+        cfdp_tlm_template=args.cfdp_tlm_template,
+        cfdp_cmd_template=args.cfdp_cmd_template,
         plugin_host=args.plugin_host,
         update_plugin=args.update_plugin,
     )
