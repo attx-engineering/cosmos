@@ -194,7 +194,14 @@ def _resolve_type(field: dict) -> tuple[str, int]:
     """
     Return (COSMOS_TYPE, total_bits) for a field.
 
-    For STRING (char) arrays, total_bits = array_length * 8.
+    For STRING (char) arrays, total_bits = array_length * 8, unless the field
+    sets "variable_length": true, in which case total_bits is 0 -- COSMOS's
+    convention for "however many bytes are actually written, no padding, no
+    truncation". array_length still matters when variable_length is set: it is
+    the flight side's fixed buffer capacity (this codebase has no dynamic
+    allocation), just not the COSMOS wire size. See warpware_hub
+    docs/contracts/cmd-tlm.md section 6.4.
+
     For all other arrays, the bits are per-element; the caller must
     expand them into indexed items.
     """
@@ -203,6 +210,11 @@ def _resolve_type(field: dict) -> tuple[str, int]:
     array_length = field.get("array_length", 0) or 0
 
     if cosmos_type == "STRING":
+        # Dropped in this fork and restored here: without it a variable-length
+        # char field is declared at its full buffer width, so COSMOS pads to
+        # the capacity where flight writes fewer bytes.
+        if field.get("variable_length"):
+            return cosmos_type, 0
         # char[] → single STRING item with total bit width
         total_bits = bits_per * (array_length if array_length > 0 else 1)
         return cosmos_type, total_bits
@@ -380,7 +392,18 @@ def _format_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -
     """Render one COMMAND packet block from template + packet dict."""
     apid_cosmos = pkt["apid"] | _CMD_APID_MASK
     cosmos_name = f"{short_name}_{pkt['name']}"
-    pkt_len     = pkt["size"] + 10   # payload + secondary header (8 B) + CRC (2 B)
+    # payload + secondary header (8 B) + CRC (2 B), minus one.
+    #
+    # The minus one is CCSDS 4.1.3.5.2: the packet data length field carries the
+    # true length of everything after the primary header, less one. Flight's
+    # writeSSPHeader does `data_len -= 1` and readSSPHeader adds it back, so a
+    # ground tool that omits it sends a length field one byte too high and the
+    # flight side reads one byte more payload than exists -- on every command.
+    #
+    # It was dropped in this fork; the previous repository computed
+    # `pkt["size"] + 10 - 1`. Caught by warpware_hub's cmd-tlm conformance
+    # suite, which found all seventeen non-CFDP commands one over.
+    pkt_len     = pkt["size"] + 10 - 1
 
     fields_str = "".join(_format_cmd_parameter(f) for f in pkt["fields"])
     fields_str += (
