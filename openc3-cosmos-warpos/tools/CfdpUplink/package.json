@@ -1,0 +1,22 @@
+{
+  "name": "@openc3/cosmos-tool-cfdpuplink",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "vite build --watch --mode dev-server",
+    "build": "vite build",
+    "lint": "eslint src",
+    "serve:standalone": "vite preview --mode standalone"
+  },
+  "dependencies": {
+    "@openc3/js-common": "6.9.2",
+    "@openc3/vue-common": "6.9.2",
+    "single-spa-vue": "3.0.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "5.2.3",
+    "vite": "6.4.1",
+    "vue": "3.5.13"
+  }
+}
