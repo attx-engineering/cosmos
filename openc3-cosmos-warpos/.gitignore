@@ -1,4 +1,4 @@
 node_modules
-openc3-cosmos-cfspp-*
+openc3-cosmos-warpos-*
 **/cmd.*
 **/tlm.*

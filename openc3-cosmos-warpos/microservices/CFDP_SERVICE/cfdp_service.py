@@ -36,7 +36,7 @@ from cfdp_core import (
 )
 
 # Outbound transfer requests are queued as JSON objects in this bucket/prefix
-# by the CFDP Uplink tool (see openc3-cosmos-cfspp/tools/CfdpUplink), rather
+# by the CFDP Uplink tool (see openc3-cosmos-warpos/tools/CfdpUplink), rather
 # than dropped as local files -- the tool runs in the browser and can only
 # reach OpenC3's bucket storage (Minio), not this microservice's own
 # filesystem. UPLOAD_BUCKET must be the resolved bucket name (e.g. "tools"),

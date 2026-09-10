@@ -1,10 +1,10 @@
 # encoding: ascii-8bit
 
 Gem::Specification.new do |s|
-  s.name = 'openc3-cosmos-cfspp'
-  s.summary = 'OpenC3 openc3-cosmos-cfspp plugin'
+  s.name = 'openc3-cosmos-warpos'
+  s.summary = 'OpenC3 openc3-cosmos-warpos plugin'
   s.description = <<-EOF
-    openc3-cosmos-cfspp plugin for deployment to OpenC3
+    openc3-cosmos-warpos plugin for deployment to OpenC3
   EOF
   s.license = 'MIT'
   s.authors = ['Anonymous']
