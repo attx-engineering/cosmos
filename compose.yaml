@@ -191,8 +191,18 @@ services:
     restart: "unless-stopped"
     ports:
     #   - "127.0.0.1:7779:7779" # Open port for the demo router
+      # ONLY the COSMOS *read* ports belong here -- the ports COSMOS receives telemetry on.
+      # These are warp_cube_read_port / nsns_read_port in openc3-cosmos-warplink/plugin.txt.
+      #
+      # Do NOT publish the matching write ports (5011 warp_cube_write_port, 5013
+      # nsns_write_port). Those are outbound from the container to host.docker.internal, so
+      # they need no mapping -- and publishing one pins docker-proxy to 0.0.0.0 on that port,
+      # which makes the host process that must BIND it (the splitter on 5011, simulated_nsns
+      # on 5013) fail with EADDRINUSE. Same trap as the old 5005/5006 mappings.
+      - "0.0.0.0:5010:5010/udp" # WARP_CUBE telemetry into COSMOS (warp_cube_read_port)
+      - "0.0.0.0:5012:5012/udp" # NSNS telemetry into COSMOS      (nsns_read_port)
       - "0.0.0.0:5005:5005/udp" # WARP_CUBE telemetry
-      - "0.0.0.0:5006:5006/udp" # NSNS telemetry
+      - "0.0.0.0:5006:5006/udp"
     depends_on:
       - "openc3-redis"
       - "openc3-redis-ephemeral"

@@ -25,7 +25,7 @@
 """
 Generate OpenC3/COSMOS cmd.txt and tlm.txt from a WarpOS warplink cmd_tlm.json.
 
-Reads the schema_version 2 JSON produced by utils/buildWarpLinkCmdTlmJson.py
+Reads the schema_version 2 or 3 JSON produced by utils/buildWarpLinkCmdTlmJson.py
 and emits one command definition file and one telemetry definition file for
 the OpenC3/COSMOS plugin.
 
@@ -226,6 +226,30 @@ def _app_comment(app: dict) -> str:
 # Telemetry formatter
 # ---------------------------------------------------------------------------
 
+def _state_lines(field: dict) -> list:
+    """Return the COSMOS STATE lines for one field.
+
+    buildWarpLinkCmdTlmJson.py resolves a field's state_sets reference and inlines
+    the labels as a literal name/value list, so an explicit list wins over the
+    implicit FALSE/TRUE pair a bool would otherwise get.
+    """
+    states = field.get("states")
+    if states:
+        return [f"    STATE {st['name']} {st['value']}\n" for st in states]
+    if field["type"].lower() == "bool":
+        return ["    STATE FALSE 0\n", "    STATE TRUE 1\n"]
+    return []
+
+
+def _state_default(field: dict) -> str:
+    """Default value for a command parameter, kept inside its declared states."""
+    states = field.get("states")
+    if not states:
+        return "0"
+    values = [st["value"] for st in states]
+    return "0" if 0 in values else str(values[0])
+
+
 def _format_tlm_item(field: dict, append_key: str = "APPEND_ITEM") -> str:
     """Format one telemetry item (scalar or array element)."""
     cosmos_type, bits_per = _resolve_type(field)
@@ -261,9 +285,7 @@ def _format_tlm_item(field: dict, append_key: str = "APPEND_ITEM") -> str:
         lines.append(line)
         if warpos_type == "float16":
             lines.append("    READ_CONVERSION half_float_conversion.py\n")
-        if warpos_type == "bool":
-            lines.append("    STATE FALSE 0\n")
-            lines.append("    STATE TRUE 1\n")
+        lines.extend(_state_lines(field))
         if units:
             lines.append(_units_line(units))
 
@@ -320,7 +342,6 @@ def _format_tlm_packets(template: str, target: str, pkt: dict, short_name: str) 
 def _format_cmd_parameter(field: dict, append_key: str = "APPEND_PARAMETER") -> str:
     """Format one command parameter (scalar or array element)."""
     cosmos_type, bits_per = _resolve_type(field)
-    warpos_type  = field["type"].lower()
     array_length = field.get("array_length", 0) or 0
     description  = field.get("description", "")
     units        = field.get("units")
@@ -350,15 +371,13 @@ def _format_cmd_parameter(field: dict, append_key: str = "APPEND_PARAMETER") -> 
             if units:
                 lines.append(_units_line(units))
     else:
-        default = "0"
+        default = _state_default(field)
         line = (
             f"  {append_key:<18}{field['id']:<30}{bits_per:<10}"
             f"{cosmos_type:<10}{'MIN':<10}{'MAX':<10}{default:<10}\"{description}\"\n"
         )
         lines.append(line)
-        if warpos_type == "bool":
-            lines.append("    STATE FALSE 0\n")
-            lines.append("    STATE TRUE 1\n")
+        lines.extend(_state_lines(field))
         if units:
             lines.append(_units_line(units))
 
@@ -369,7 +388,13 @@ def _format_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -
     """Render one COMMAND packet block from template + packet dict."""
     apid_cosmos = pkt["apid"] | _CMD_APID_MASK
     cosmos_name = f"{short_name}_{pkt['name']}"
-    pkt_len     = pkt["size"] + 10   # payload + secondary header (8 B) + CRC (2 B)
+    # payload + secondary header (8 B) + CRC (2 B), minus 1 per CCSDS Space Packet
+    # Protocol section 4.1.3.5.2 -- the packet data length field encodes the true
+    # length minus one. readSSPHeader() on the flight side adds 1 back when
+    # reconstructing data_len from this same field, so this must encode the same
+    # convention writeSSPHeader() uses for outgoing telemetry, or the flight side
+    # ends up expecting every command to be one byte longer than what's sent.
+    pkt_len     = pkt["size"] + 10 - 1
 
     fields_str = "".join(_format_cmd_parameter(f) for f in pkt["fields"])
     fields_str += (
@@ -439,11 +464,13 @@ class CosmosUpdateCmdTlm:
         with open(cmd_tlm_json) as f:
             self._data = json.load(f)
 
+        # 3 adds the optional per-field "states" list and changes nothing else, so a
+        # schema 2 file renders identically -- it simply carries no states to emit.
         schema = self._data.get("schema_version", 1)
-        if schema != 2:
+        if schema not in (2, 3):
             raise ValueError(
                 f"Unsupported cmd_tlm.json schema_version {schema}. "
-                "Expected 2 (produced by buildWarpLinkCmdTlmJson.py)."
+                "Expected 2 or 3 (produced by buildWarpLinkCmdTlmJson.py)."
             )
 
         self._target = self._data["cosmos_target"]
