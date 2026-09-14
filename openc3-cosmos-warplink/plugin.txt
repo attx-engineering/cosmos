@@ -92,7 +92,7 @@ TARGET BF2_FLIGHT_BOARD BF2_FLIGHT_BOARD
 
 # Uncomment the line that matches your hardware connection
 #INTERFACE BF2_FLIGHT_BOARD_INT openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 230400 NONE 1 10.0 None # Serial to Linux
-#INTERFACE BF2_FLIGHT_BOARD_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal <%= bf2_flight_board_write_port %> <%= bf2_flight_board_read_port %> 10.0 None # Docker routing to Windows bridge
+#INTERFACE BF2_FLIGHT_BOARD_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal 5000 5000 10.0 None # Docker routing to Windows bridge (router_port in bridge.txt)
 INTERFACE BF2_FLIGHT_BOARD_INT openc3/interfaces/udp_interface.py <%= bf2_flight_board_host %> <%= bf2_flight_board_write_port %> <%= bf2_flight_board_read_port %> None None 128 10.0 None # RasPi UDP
   PROTOCOL WRITE cfdp_aware_crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
   PROTOCOL READ check_pattern.py 512

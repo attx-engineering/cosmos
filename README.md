@@ -18,6 +18,7 @@ or TCP/IP.
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/` | The Sim Control tool |
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/` | The CFDP Uplink tool |
 | `compose.yaml` | Container configuration, including the telemetry ports published into COSMOS |
+| `bridge.txt` | Windows serial/USB bridge configuration, run with `openc3cli bridge bridge.txt` |
 | `cfdp/` | Host directory for CFDP transfers (git-ignored, bind mounted into the containers) |
 | `openc3.sh` | Container control and CLI wrapper |
 
@@ -137,16 +138,20 @@ Downloads needed:
 
 Configuration:
 
-- `bridge.txt` is not checked into this repo. Generate a default in the base
-  directory with `openc3cli bridgesetup bridge.txt`, then edit:
-  - UART configuration (baud rate, parity, data bits, flow control, etc.)
-  - COM port name — the port you read and write depends on what your computer
-    assigned the USB connection
-  - Router port — used to route serial telemetry to an internal TCP connection
+- `bridge.txt` in the base directory of WarpLink configures the bridge. Check
+  its variables against your hardware:
+  - UART configuration — baud rate (default 230400), parity, data bits, flow
+    control, etc.
+  - COM port name (default `COM4`) — the port you read and write depends on
+    what your computer assigned the USB connection; see Device Manager
+  - Router port (default 5000) — the TCP port the bridge serves serial traffic
+    on for COSMOS to connect to
 - In `openc3-cosmos-warplink/plugin.txt`, each target block has a commented
   `INTERFACE` line for a TCP connection to `host.docker.internal`. Uncomment
   that line for your target and comment out its other `INTERFACE` lines (serial
-  and UDP).
+  and UDP). For `BF2_FLIGHT_BOARD` it already connects on port 5000 for both
+  directions; if you change `router_port` in `bridge.txt`, change both ports on
+  that line to match.
   - Changing `plugin.txt` means rebuilding the `.gem` and reinstalling it
     through the UI, per the instructions above.
 

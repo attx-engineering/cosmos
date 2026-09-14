@@ -1,0 +1,29 @@
+# ==== Configurable variables ====
+# Change COM4 to whatever shows in Device Manager
+VARIABLE write_port_name COM4
+VARIABLE read_port_name  COM4
+
+# Serial settings
+VARIABLE baud_rate       230400
+VARIABLE parity          NONE      # or EVEN / ODD
+VARIABLE stop_bits       1
+VARIABLE write_timeout   10.0
+VARIABLE read_timeout    nil       # nil = block until data
+VARIABLE flow_control    NONE
+VARIABLE data_bits       8
+
+# TCP port the bridge will listen on. Must match both ports on the
+# "Docker routing to Windows bridge" INTERFACE line in
+# openc3-cosmos-warplink/plugin.txt.
+VARIABLE router_port           5000
+VARIABLE router_listen_address 127.0.0.1
+
+# ==== Serial interface (host talking to COMx) ====
+INTERFACE SERIAL_INT serial_interface.rb <%= write_port_name %> <%= read_port_name %> <%= baud_rate %> <%= parity %> <%= stop_bits %> <%= write_timeout %> <%= read_timeout %>
+    OPTION FLOW_CONTROL <%= flow_control %>
+    OPTION DATA_BITS <%= data_bits %>
+
+# ==== TCP router (what COSMOS connects to) ====
+ROUTER SERIAL_ROUTER tcpip_server_interface.rb <%= router_port %> <%= router_port %> 10.0 nil BURST
+    ROUTE SERIAL_INT
+    OPTION LISTEN_ADDRESS <%= router_listen_address %>
