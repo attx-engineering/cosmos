@@ -15,7 +15,6 @@ trivy.yaml
 .grype.yaml
 .whitelist
 roodi.yml
-CONTRIBUTING.txt
 
 # Generated docs site (GitHub Pages output, not used by the build)
 docs/

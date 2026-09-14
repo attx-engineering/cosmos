@@ -2,8 +2,9 @@
 
 WarpLink is [OpenC3 COSMOS](https://docs.openc3.com/docs) configured as the
 ground system for WarpOS flight software. It provides telemetry display and
-graphing, command sending, scripting, and logging for one or more WarpOS build
-targets over UDP, serial/USB, or TCP/IP.
+graphing, command sending, scripting, logging, CFDP file transfer, and
+simulation control for one or more WarpOS build targets over UDP, serial/USB,
+or TCP/IP.
 
 ## Repository layout
 
@@ -16,6 +17,7 @@ targets over UDP, serial/USB, or TCP/IP.
 | `openc3-cosmos-warplink/microservices/CFDP_SERVICE/` | CFDP file transfer microservice |
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/` | The Sim Control tool |
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/` | The CFDP Uplink tool |
+| `compose.yaml` | Container configuration, including the telemetry ports published into COSMOS |
 | `cfdp/` | Host directory for CFDP transfers (git-ignored, bind mounted into the containers) |
 | `openc3.sh` | Container control and CLI wrapper |
 
@@ -39,20 +41,28 @@ Everything else is upstream OpenC3 COSMOS.
    - `openc3-cosmos-warplink/targets/<TARGET>/cmd_tlm/cmd.txt` and `tlm.txt`
    - `target.txt` and `lib/` copied from `targets/common/`
    - a `TARGET` + `INTERFACE` block in `openc3-cosmos-warplink/plugin.txt`, on
-     the next free pair of UDP ports, if that target is not declared yet
+     the next free pair of UDP ports and pointed at `host.docker.internal`
+     (override with `--plugin-host`), if that target is not declared yet
 
    Each WarpOS build gets its own COSMOS target, so several builds can coexist
    in one instance. Blocks that already exist in `plugin.txt` are never
    rewritten — ports and hosts you tune there survive regeneration. Run
    `python3 CosmosUpdateCmdTlm.py --help` for the available paths and flags.
 
-3. **Start the containers.**
+   The generator does not edit `compose.yaml`. For a new target, publish its
+   read port there too — see [Targets and ports](#targets-and-ports).
+
+3. **Build and start the containers.**
 
    ```bash
    mkdir -p cfdp       # CFDP transfer directory; create it before Docker does, as root
-   ./openc3.sh start   # first time: builds the containers, then runs them
+   ./openc3.sh start   # builds the containers from this source, then runs them
    ./openc3.sh run     # afterwards: runs the already-built containers
    ```
+
+   WarpLink's containers include the CFDP Uplink and Sim Control tools, so they
+   are built from this repository rather than pulled as upstream OpenC3 images.
+   Run `./openc3.sh start` again after updating to a new WarpLink release.
 
 4. **Build the plugin** that ingests the commands and telemetry:
 
@@ -61,7 +71,7 @@ Everything else is upstream OpenC3 COSMOS.
    ```
 
    1. Increment the version (MAJOR.MINOR.PATCH) on every build — COSMOS keys
-      plugins by version, so reinstalling requires a new number. 
+      plugins by version, so reinstalling requires a new number.
    2. This creates `openc3-cosmos-warplink-#.#.#.gem` in that directory, used
       in the next steps.
 
@@ -81,6 +91,9 @@ Any change to `plugin.txt`, `cmd.txt`, `tlm.txt`, or the target `lib/` needs a
 new gem: rebuild with an incremented `VERSION` and reinstall it through the
 Admin Console. Regenerating from a new `cmd_tlm.json` (step 2) counts.
 
+A change to `compose.yaml` needs `./openc3.sh run` to recreate the affected
+containers; it does not need a new gem.
+
 ## Targets and ports
 
 Each target needs its own UDP ports. COSMOS scopes packet identification to the
@@ -89,13 +102,24 @@ STREAM_IDs, so two targets sharing an interface — or two interfaces sharing a
 read port — cannot be told apart. `CosmosUpdateCmdTlm.py` allocates above the
 highest port already declared to keep new targets clear of existing ones.
 
-| Target | Host | Write (command) | Read (telemetry) |
-| --- | --- | --- | --- |
-| `EXAMPLE` | `172.20.10.4` | 5006 | 5005 |
-| `SIM` | `host.docker.internal` | 5009 | — (send only) |
+Defaults in `openc3-cosmos-warplink/plugin.txt`:
 
-Set `<target>_enable` to `false`, in the file or in the install dialog, to skip
-a target you are not flying.
+| Target | Enabled | Host | Write (command) | Read (telemetry) |
+| --- | --- | --- | --- | --- |
+| `BF2_FLIGHT_BOARD` | yes | `10.1.4.27` | 5006 | 5005 |
+| `WARP_CUBE` | no | `host.docker.internal` | 5011 | 5010 |
+| `NSNS` | no | `host.docker.internal` | 5013 | 5012 |
+| `SIM` | no | `host.docker.internal` | 5009 | — (send only) |
+
+Set `<target>_enable` to `true` or `false`, in the file or in the install
+dialog, to choose which targets load.
+
+**Publishing ports.** COSMOS receives telemetry inside the `openc3-operator`
+container, so every target's read port must be listed under that service's
+`ports` in `compose.yaml`, e.g. `- "0.0.0.0:5010:5010/udp"`. Publish only read
+ports. Write ports are outbound from the container and need no mapping, and
+publishing one makes any host process that has to bind that port (a splitter
+or a simulator) fail with `EADDRINUSE`.
 
 ## Windows Serial/USB Command/Telemetry Interface
 
@@ -158,24 +182,22 @@ The simplest way to receive telemetry is over WiFi using a RasPi. You can
 either:
 
 1. Use the Raspberry Pi as a passthrough for telemetry.
-   1. Connect the telemetry UART from the hardware to the Pi.
-   2. Upload `cmd-tlm-interface.py` to the Pi and update its configuration —
-      specifically the arguments at the beginning of `main` for which USB
-      device, which IP, and the UART rate.
-   3. Run `cmd-tlm-interface.py`, with either the correct defaults described
-      above or the correct option flags. Telemetry should start passing through.
+   1. Connect the telemetry and command UARTs from the hardware to the Pi.
+   2. Copy `cmd-tlm-interface.py` from the pi-tools repository
+      (`attx-engineering/pi-tools`) to the Pi.
+   3. Run it with the flags for your setup (see step 9 below). Telemetry
+      should start passing through.
 2. Use the Raspberry Pi as the hardware platform, configured to take telemetry
    and send it over a socket.
 
 **Notes:**
 
-1. `cmd-tlm-interface.py` ships with the WarpLink distribution, not with this
-   repository — get it from the distribution clone in step 1.
-2. The Pi must send to the read port and listen on the write port of the target
-   it is feeding (5005/5006 for `WARP_CUBE`; see the table above).
-3. In `openc3-cosmos-warplink/plugin.txt`, ensure the IP in that target's
-   `<target>_host` variable is the IP of the Pi you are running — or set it in
-   the plugin install dialog, which needs no rebuild.
+1. The Pi must send to the read port and listen on the write port of the target
+   it is feeding (5005/5006 for `BF2_FLIGHT_BOARD`; see
+   [Targets and ports](#targets-and-ports)).
+2. That target's `<target>_host` variable must be the IP of the Pi. Set it in
+   `openc3-cosmos-warplink/plugin.txt`, or in the plugin install dialog, which
+   needs no rebuild.
 
 ### RasPi configuration for Serial-UDP
 
@@ -203,26 +225,48 @@ If the RasPi hasn't been flashed yet:
    1. If the connection does not work, try pinging the Pi.
    2. On first boot the RasPi may need to connect to WiFi, so allow ~10 minutes
       before troubleshooting.
-8. Set up the UDP connection on the RasPi:
-   1. In `cmd-tlm-interface.py`, change the IP address and name in lines 40-41.
-   2. Transfer the file to the RasPi (VSCode remote-ssh extension, SFTP, or
-      another method).
-9. On the RasPi CLI: `sudo python3 cmd-tlm-interface.py`
-   1. You should start to see `[UART RX]` data streaming on stdout, if the
-      serial input is sending telemetry.
+8. Transfer `cmd-tlm-interface.py` to the RasPi (VSCode remote-ssh extension,
+   SFTP, or another method).
+9. On the RasPi CLI, run it with the flags for your hardware and network:
+
+   ```bash
+   sudo python3 cmd-tlm-interface.py --udp_addr <WarpLink host IP> \
+       --telemetry_serial <USB serial> --command_serial <USB serial>
+   ```
+
+   | Flag | Meaning | Default |
+   | --- | --- | --- |
+   | `--udp_addr` | IP of the machine running WarpLink | — |
+   | `--udp_port` | Target read port telemetry is sent to | 5005 |
+   | `--listen_port` | Target write port commands arrive on | 5006 |
+   | `--telemetry_serial` | USB serial number of the telemetry UART adapter | `BG00WUKH` |
+   | `--command_serial` | USB serial number of the command UART adapter | `BG01BA7H` |
+   | `--baud` | UART baud rate | 115200 |
+   | `--telemetry_baud` | Telemetry UART baud rate, if different from `--baud` | same as `--baud` |
+
+   `find-usb-devices.py` in pi-tools can help identify the adapters' serial
+   numbers. Once it is running, telemetry should appear on the CmdTlmServer
+   tab in WarpLink.
 
 ## Simulation control
 
 The `SIM` target is not a WarpOS build. It is a send-only JSON channel on its
 own port (5009 by default) so it never mixes with flight software command
-traffic. Its one command, `SET_VALUE`, sends raw JSON with no CCSDS header and
-no CRC:
+traffic. It is disabled by default; set `sim_enable` to `true` to load it. Its
+one command, `SET_VALUE`, sends raw JSON with no CCSDS header and no CRC:
 
 ```json
 { "address": ".exc.spacecraft.params.mass", "value": 5 }
 ```
 
-The Sim Control tool in the sidebar is the front end for it.
+The Sim Control tool in the sidebar is the front end for it. To autocomplete
+addresses, load the simulation's `graph_tree.json` into the tool (a copy lives
+in `openc3-cosmos-warplink/targets/SIM/`). The tool keeps the tree in your
+browser, so loading a newer dump needs no plugin rebuild.
+
+The port is fire-and-forget: "Sent" means the JSON left WarpLink, not that the
+simulation accepted it. A rejected address or value is logged on the
+simulation's side only.
 
 ## CFDP file transfer
 
@@ -248,7 +292,7 @@ carried as bare CFDP PDUs (no CCSDS wrapper) on the target's normal interface.
   file and queues it for `CFDP_SERVICE` to send, sends
   `STORAGE_MANAGER_FILE_GET` to request a file from WarpOS, and lists and
   downloads received files — including partial ones, each labelled Complete,
-  Receiving, Incomplete, or Failed.
+  Receiving, Incomplete, or Failed. Uploading requires the admin role.
 
 The `cfdp/` directory must exist before the containers start, or Docker creates
 it owned by root and the service cannot write to it.
@@ -265,12 +309,17 @@ CmdTlmServer tab) or rebuilding and reinstalling the plugin is enough.
    2. Ensure the IP addresses and ports are correct in
       `openc3-cosmos-warplink/plugin.txt`, or in the plugin install dialog.
    3. Check that the target's `<target>_enable` variable is `true`.
+   4. Check that the target's read port is published in `compose.yaml` — see
+      [Targets and ports](#targets-and-ports).
 2. If many "unknown" packets are arriving, the definitions no longer match the
    flight software. Reload `cmd_tlm.json` from WarpOS, copy it into WarpLink,
    rerun `CosmosUpdateCmdTlm.py`, and rebuild and reinstall the `.gem`.
 3. If a target loads but never identifies packets while another target works,
    check that the two are not sharing a read port — see
    [Targets and ports](#targets-and-ports).
+4. If a host-side splitter or simulator fails to start with `EADDRINUSE`, a
+   write port is published in `compose.yaml`. Remove that mapping and run
+   `./openc3.sh run`.
 
 ## Upstream
 
