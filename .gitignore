@@ -26,6 +26,8 @@ plugins/DEFAULT/
 *.dSYM/
 cmd_tlm.json
 graph_tree.json
+# CFDP transfers (bind mounted into the containers, see compose.yaml)
+/cfdp/
 
 # local env files
 .env.local

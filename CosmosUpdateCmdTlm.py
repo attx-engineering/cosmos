@@ -113,6 +113,17 @@ _DEFAULT_BASE_PORT = 5005
 ALWAYS_SUFFIX_INSTANCE = False
 
 # ---------------------------------------------------------------------------
+# CFDP-packing telemetry: a bare CFDP PDU carries no APID at all (it's
+# identified by bitfields in the CFDP header itself, not a CCSDS wrapper --
+# see templates/cfdp_telemetry.txt), so it doesn't follow the normal
+# <<SHORT_NAME>>_<<PACKET_NAME>> naming convention either. There is exactly
+# one such packet, matching CFDP's own singular nature, so the COSMOS name
+# is a fixed protocol-level constant rather than derived per-app.  Keep in
+# sync with OPTION PACKET on CFDP_SERVICE in plugin.txt.
+# ---------------------------------------------------------------------------
+_CFDP_TLM_PACKET_NAME = "CFDP_PACKET"
+
+# ---------------------------------------------------------------------------
 # Type mapping: WarpOS type → (COSMOS type keyword, bit width per element)
 # ---------------------------------------------------------------------------
 _TYPE_MAP: dict[str, tuple[str, int]] = {
@@ -183,7 +194,13 @@ def _resolve_type(field: dict) -> tuple[str, int]:
     """
     Return (COSMOS_TYPE, total_bits) for a field.
 
-    For STRING (char) arrays, total_bits = array_length * 8.
+    For STRING (char) arrays, total_bits = array_length * 8, unless the field
+    sets "variable_length": true, in which case total_bits is 0 -- COSMOS's
+    convention for "however many bytes are actually written, no padding,
+    no truncation" (the same convention already used for CFDP_PDU on the
+    telemetry side: ITEM CFDP_PDU 0 0 BLOCK). array_length still matters even
+    when variable_length is set: it's the flight side's fixed buffer capacity
+    (this codebase has no dynamic allocation), just not the COSMOS wire size.
     For all other arrays, the bits are per-element; the caller must
     expand them into indexed items.
     """
@@ -192,6 +209,8 @@ def _resolve_type(field: dict) -> tuple[str, int]:
     array_length = field.get("array_length", 0) or 0
 
     if cosmos_type == "STRING":
+        if field.get("variable_length"):
+            return cosmos_type, 0
         # char[] → single STRING item with total bit width
         total_bits = bits_per * (array_length if array_length > 0 else 1)
         return cosmos_type, total_bits
@@ -335,6 +354,26 @@ def _format_tlm_packets(template: str, target: str, pkt: dict, short_name: str) 
     return "\n".join(blocks)
 
 
+def _format_cfdp_tlm_packet(template: str, target: str, pkt: dict) -> str:
+    """
+    Render the fixed-format CFDP telemetry packet from templates/cfdp_telemetry.txt:
+    a bare CFDP PDU with no CCSDS wrapper, identified by ID_ITEMs on the CFDP
+    header's own bitfields (version / crc+large-file flags / segmentation +
+    entity-id-length prefix / sequence-number-length) instead of an APID.
+
+    This layout is entirely fixed by the CFDP spec as this codebase packs it
+    (StorageManager::packPdu -- 2-byte entity IDs, 2-byte sequence numbers),
+    so unlike _format_tlm_packets there are no per-field or per-registration
+    substitutions: one packet, one block, always the same shape.
+    """
+    pkt_str = template
+    pkt_str = pkt_str.replace("<<TARGET>>",      target)
+    pkt_str = pkt_str.replace("<<PACKET_NAME>>", _CFDP_TLM_PACKET_NAME)
+    pkt_str = pkt_str.replace("<<ENDIANNESS>>",  "BIG_ENDIAN")
+    pkt_str = pkt_str.replace("<<DESCRIPTION>>", pkt.get("description", ""))
+    return pkt_str
+
+
 # ---------------------------------------------------------------------------
 # Command formatter
 # ---------------------------------------------------------------------------
@@ -413,6 +452,34 @@ def _format_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -
     return pkt_str
 
 
+def _format_cfdp_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -> str:
+    """
+    Render a bare-CFDP-PDU command from templates/cfdp_command.txt: exactly
+    one field holding the raw, already-built CFDP PDU bytes (header + data +
+    the PDU's own inner CRC) -- no CCSDS wrapper, no separate outer CRC
+    parameter, and no APID (a bare CFDP PDU has none; CommandManager detects
+    it by the CFDP header's own byte pattern -- see potentialCfdpPacket() in
+    CommandManager.cpp). See templates/cfdp_command.txt for why the header
+    can't be decomposed into individual parameters the way telemetry's is.
+    """
+    cosmos_name = f"{short_name}_{pkt['name']}"
+    fields = pkt.get("fields", [])
+    if len(fields) != 1:
+        raise ValueError(
+            f"CFDP command packet '{pkt['name']}' must have exactly one field"
+            f" (the raw PDU bytes) -- found {len(fields)}"
+        )
+    fields_str = _format_cmd_parameter(fields[0])
+
+    pkt_str = template
+    pkt_str = pkt_str.replace("<<TARGET>>",            target)
+    pkt_str = pkt_str.replace("<<PACKET_NAME>>",       cosmos_name)
+    pkt_str = pkt_str.replace("<<ENDIANNESS>>",        "BIG_ENDIAN")
+    pkt_str = pkt_str.replace("<<DESCRIPTION>>",       pkt.get("description", ""))
+    pkt_str = pkt_str.replace("<<ADDITIONAL_FIELDS>>", fields_str)
+    return pkt_str
+
+
 # ---------------------------------------------------------------------------
 # Main generator class
 # ---------------------------------------------------------------------------
@@ -434,6 +501,14 @@ class CosmosUpdateCmdTlm:
         Path to templates/telemetry.txt (CCSDS header template).
     cmd_template : str | Path
         Path to templates/command.txt (CCSDS header template).
+    cfdp_tlm_template : str | Path | None
+        Path to templates/cfdp_telemetry.txt (bare-CFDP-PDU telemetry
+        template, used for packets with packing_scheme == "cfdp").
+        Defaults to a "cfdp_telemetry.txt" sibling of tlm_template.
+    cfdp_cmd_template : str | Path | None
+        Path to templates/cfdp_command.txt (bare-CFDP-PDU command template,
+        used for command packets with packing_scheme == "cfdp"). Defaults to
+        a "cfdp_command.txt" sibling of cmd_template.
     target_dir : str | Path
         Root of the targets/ folder in the COSMOS plugin.  Output is written
         to <target_dir>/<cosmos_target>/.
@@ -460,6 +535,8 @@ class CosmosUpdateCmdTlm:
         plugin_txt=None,
         plugin_host=DEFAULT_PLUGIN_HOST,
         update_plugin=True,
+        cfdp_tlm_template=None,
+        cfdp_cmd_template=None,
     ):
         with open(cmd_tlm_json) as f:
             self._data = json.load(f)
@@ -479,6 +556,16 @@ class CosmosUpdateCmdTlm:
             self._tlm_template = _strip_header(f.read())
         with open(cmd_template) as f:
             self._cmd_template = _strip_header(f.read())
+
+        if cfdp_tlm_template is None:
+            cfdp_tlm_template = Path(tlm_template).parent / "cfdp_telemetry.txt"
+        with open(cfdp_tlm_template) as f:
+            self._cfdp_tlm_template = _strip_header(f.read())
+
+        if cfdp_cmd_template is None:
+            cfdp_cmd_template = Path(cmd_template).parent / "cfdp_command.txt"
+        with open(cfdp_cmd_template) as f:
+            self._cfdp_cmd_template = _strip_header(f.read())
 
         target_dir          = Path(target_dir)
         self._out_dir       = target_dir / self._target / "cmd_tlm"
@@ -542,7 +629,9 @@ class CosmosUpdateCmdTlm:
 
         Mirrors the WARP_CUBE blocks: same UDP interface, same CRC and
         check_pattern protocols, with the target name, interface name and
-        ports swapped in.  The commented serial and TCP/IP lines come along
+        ports swapped in.  The WRITE CRC protocol is the CFDP-aware one so
+        bare CFDP PDU commands (no CRC item) pass through, and check_pattern
+        gets a 512-byte limit so full CFDP PDUs fit.  The commented serial and TCP/IP lines come along
         so the connection can be switched by uncommenting, as for WARP_CUBE.
         """
         target = self._target
@@ -567,8 +656,8 @@ TARGET {target} {target}
 #INTERFACE {interface} openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 115200 NONE 1 10.0 None # Serial to Linux
 #INTERFACE {interface} openc3/interfaces/tcpip_client_interface.py host.docker.internal <%= {prefix}_write_port %> <%= {prefix}_read_port %> 10.0 None # Docker routing to Windows bridge
 INTERFACE {interface} openc3/interfaces/udp_interface.py <%= {prefix}_host %> <%= {prefix}_write_port %> <%= {prefix}_read_port %> None None 128 10.0 None # RasPi UDP
-  PROTOCOL WRITE openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
-  PROTOCOL READ check_pattern.py
+  PROTOCOL WRITE cfdp_aware_crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
+  PROTOCOL READ check_pattern.py 512
   PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
   MAP_TARGET {target}
 <% end %>
@@ -649,7 +738,10 @@ INTERFACE {interface} openc3/interfaces/udp_interface.py <%= {prefix}_host %> <%
                 if not app_tlm_written:
                     tlm_str += comment
                     app_tlm_written = True
-                tlm_str += _format_tlm_packets(self._tlm_template, self._target, pkt, short_name)
+                if pkt.get("packing_scheme") == "cfdp":
+                    tlm_str += _format_cfdp_tlm_packet(self._cfdp_tlm_template, self._target, pkt)
+                else:
+                    tlm_str += _format_tlm_packets(self._tlm_template, self._target, pkt, short_name)
                 tlm_str += "\n"
 
             # -- All commands --
@@ -660,7 +752,10 @@ INTERFACE {interface} openc3/interfaces/udp_interface.py <%= {prefix}_host %> <%
                 if not app_cmd_written:
                     cmd_str += comment
                     app_cmd_written = True
-                cmd_str += _format_cmd_packet(self._cmd_template, self._target, pkt, short_name)
+                if pkt.get("packing_scheme") == "cfdp":
+                    cmd_str += _format_cfdp_cmd_packet(self._cfdp_cmd_template, self._target, pkt, short_name)
+                else:
+                    cmd_str += _format_cmd_packet(self._cmd_template, self._target, pkt, short_name)
                 cmd_str += "\n"
 
         self._setup_target_dir()
@@ -700,6 +795,18 @@ if __name__ == "__main__":
         "--cmd-template",
         default="templates/command.txt",
         help="Path to the CCSDS command header template",
+    )
+    parser.add_argument(
+        "--cfdp-tlm-template",
+        default="templates/cfdp_telemetry.txt",
+        help="Path to the bare-CFDP-PDU telemetry template, used for "
+             "packets with packing_scheme == \"cfdp\"",
+    )
+    parser.add_argument(
+        "--cfdp-cmd-template",
+        default="templates/cfdp_command.txt",
+        help="Path to the bare-CFDP-PDU command template, used for command "
+             "packets with packing_scheme == \"cfdp\"",
     )
     parser.add_argument(
         "--target-dir",
@@ -743,5 +850,7 @@ if __name__ == "__main__":
         plugin_txt=args.plugin_txt,
         plugin_host=args.plugin_host,
         update_plugin=args.update_plugin,
+        cfdp_tlm_template=args.cfdp_tlm_template,
+        cfdp_cmd_template=args.cfdp_cmd_template,
     )
     gen()

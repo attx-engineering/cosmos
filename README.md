@@ -10,10 +10,13 @@ targets over UDP, serial/USB, or TCP/IP.
 | Path | What it is |
 | --- | --- |
 | `CosmosUpdateCmdTlm.py` | Generates COSMOS command/telemetry definitions from a WarpOS `cmd_tlm.json` |
-| `templates/` | CCSDS header templates (`command.txt`, `telemetry.txt`) the generator fills in |
+| `templates/` | CCSDS header templates (`command.txt`, `telemetry.txt`) and bare CFDP PDU templates (`cfdp_command.txt`, `cfdp_telemetry.txt`) the generator fills in |
 | `openc3-cosmos-warplink/` | The COSMOS plugin: `plugin.txt`, per-target `cmd_tlm/`, and the built `.gem` files |
-| `openc3-cosmos-warplink/targets/common/` | `target.txt` and `lib/` (CRC, `check_pattern.py`, half-float conversion) copied into every generated target |
+| `openc3-cosmos-warplink/targets/common/` | `target.txt` and `lib/` (CFDP-aware CRC, `check_pattern.py`, half-float conversion) copied into every generated target |
+| `openc3-cosmos-warplink/microservices/CFDP_SERVICE/` | CFDP file transfer microservice |
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/` | The Sim Control tool |
+| `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/` | The CFDP Uplink tool |
+| `cfdp/` | Host directory for CFDP transfers (git-ignored, bind mounted into the containers) |
 | `openc3.sh` | Container control and CLI wrapper |
 
 Everything else is upstream OpenC3 COSMOS.
@@ -46,6 +49,7 @@ Everything else is upstream OpenC3 COSMOS.
 3. **Start the containers.**
 
    ```bash
+   mkdir -p cfdp       # CFDP transfer directory; create it before Docker does, as root
    ./openc3.sh start   # first time: builds the containers, then runs them
    ./openc3.sh run     # afterwards: runs the already-built containers
    ```
@@ -219,6 +223,35 @@ no CRC:
 ```
 
 The Sim Control tool in the sidebar is the front end for it.
+
+## CFDP file transfer
+
+Files move between WarpLink and WarpOS as unacknowledged-mode CFDP transfers,
+carried as bare CFDP PDUs (no CCSDS wrapper) on the target's normal interface.
+
+- **Definitions.** Packets marked `"packing_scheme": "cfdp"` in `cmd_tlm.json`
+  are generated from `templates/cfdp_telemetry.txt` (always named
+  `CFDP_PACKET`) and `templates/cfdp_command.txt`
+  (`STORAGE_MANAGER_CFDP`). Every interface uses `check_pattern.py 512`, which
+  delineates both CCSDS packets and CFDP PDUs, and `cfdp_aware_crc_protocol.py`,
+  which skips the CRC fill on the bare PDU commands.
+- **Service.** `CFDP_SERVICE` serves the one target named by the `cfdp_target`
+  plugin variable (default `BF2_FLIGHT_BOARD`). Set `cfdp_enable` to `false` to
+  install without it.
+- **Receiving.** Files are staged in `cfdp/incoming/in_progress/` and moved to
+  `cfdp/incoming/complete/` only once every byte has arrived and the checksum
+  matches; anything else lands in `cfdp/incoming/failed/`. Partial files have
+  their missing bytes zero-filled and a `<name>.cfdp-status.json` beside them
+  recording bytes received, missing ranges, and why the transfer is not
+  complete.
+- **Sending and requesting.** The CFDP Uplink tool in the sidebar uploads a
+  file and queues it for `CFDP_SERVICE` to send, sends
+  `STORAGE_MANAGER_FILE_GET` to request a file from WarpOS, and lists and
+  downloads received files — including partial ones, each labelled Complete,
+  Receiving, Incomplete, or Failed.
+
+The `cfdp/` directory must exist before the containers start, or Docker creates
+it owned by root and the service cannot write to it.
 
 ## Troubleshooting
 
