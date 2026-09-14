@@ -16,6 +16,9 @@ trivy.yaml
 .whitelist
 roodi.yml
 
+# Simulation internals (Sim Control loads the sim's own graph_tree.json instead)
+openc3-cosmos-warplink/targets/SIM/graph_tree.json
+
 # Generated docs site (GitHub Pages output, not used by the build)
 docs/
 

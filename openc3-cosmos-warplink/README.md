@@ -4,7 +4,10 @@ WarpLink plugin for WarpOS flight software, deployed to OpenC3 COSMOS.
 
 ## Targets
 
-- `WARP_CUBE`, `NSNS` - WarpOS build targets, CCSDS over UDP with CRC.
+- `BF2_FLIGHT_BOARD` - WarpOS build target, CCSDS over UDP with CRC.
+  `CosmosUpdateCmdTlm.py` adds a block like it to `plugin.txt` for every other
+  build target it generates. Generated `targets/<TARGET>/` folders are not
+  committed; only `common/` and `SIM` are.
 - `SIM` - simulation value injection. Write only UDP on `sim_write_port`
   (default 5009), separate from the flight software ports. Its one command,
   `SET_VALUE`, sends raw JSON with no header or CRC:

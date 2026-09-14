@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
     WarpLink plugin for WarpOS flight software, deployed to OpenC3 COSMOS
   EOF
   s.authors = ['Alex Jackson']
-  s.email = ['alex.jackson@warpware.co']
+  s.email = ['support@warpware.co']
   s.homepage = 'https://github.com/OpenC3/cosmos'
   s.platform = Gem::Platform::RUBY
   s.required_ruby_version = '>= 3.0'

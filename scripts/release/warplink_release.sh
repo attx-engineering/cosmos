@@ -137,6 +137,8 @@ if [[ -f "${RELEASEIGNORE_FILE}" ]]; then
     [[ -z "${pattern// }" || "${pattern}" =~ ^# ]] && continue
     matches=( "${EXPORT_DIR}"/${pattern} )
     for m in "${matches[@]}"; do
+      # Literal (non-wildcard) patterns expand to themselves even when absent
+      [[ -e "$m" || -L "$m" ]] || continue
       rm -rf -- "$m"
       info "Removed: ${m#"${EXPORT_DIR}"/}"
     done

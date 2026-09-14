@@ -106,17 +106,19 @@ Defaults in `openc3-cosmos-warplink/plugin.txt`:
 
 | Target | Enabled | Host | Write (command) | Read (telemetry) |
 | --- | --- | --- | --- | --- |
-| `BF2_FLIGHT_BOARD` | yes | `10.1.4.27` | 5006 | 5005 |
-| `WARP_CUBE` | no | `host.docker.internal` | 5011 | 5010 |
-| `NSNS` | no | `host.docker.internal` | 5013 | 5012 |
+| `BF2_FLIGHT_BOARD` | yes | `host.docker.internal` | 5006 | 5005 |
 | `SIM` | no | `host.docker.internal` | 5009 | — (send only) |
+
+Targets generated from other WarpOS builds are added on the next free pair of
+ports above these (5010/5011, then 5012/5013, and so on).
 
 Set `<target>_enable` to `true` or `false`, in the file or in the install
 dialog, to choose which targets load.
 
 **Publishing ports.** COSMOS receives telemetry inside the `openc3-operator`
-container, so every target's read port must be listed under that service's
-`ports` in `compose.yaml`, e.g. `- "0.0.0.0:5010:5010/udp"`. Publish only read
+container, so every enabled target's read port must be listed under that
+service's `ports` in `compose.yaml`. Only `BF2_FLIGHT_BOARD`'s 5005 is there by
+default; a generated target on 5010 needs `- "0.0.0.0:5010:5010/udp"`. Publish only read
 ports. Write ports are outbound from the container and need no mapping, and
 publishing one makes any host process that has to bind that port (a splitter
 or a simulator) fail with `EADDRINUSE`.
@@ -260,9 +262,9 @@ one command, `SET_VALUE`, sends raw JSON with no CCSDS header and no CRC:
 ```
 
 The Sim Control tool in the sidebar is the front end for it. To autocomplete
-addresses, load the simulation's `graph_tree.json` into the tool (a copy lives
-in `openc3-cosmos-warplink/targets/SIM/`). The tool keeps the tree in your
-browser, so loading a newer dump needs no plugin rebuild.
+addresses, load the `graph_tree.json` the simulation writes on its first step
+into the tool. The tool keeps the tree in your browser, so loading a newer dump
+needs no plugin rebuild.
 
 The port is fire-and-forget: "Sent" means the JSON left WarpLink, not that the
 simulation accepted it. A rejected address or value is logged on the
