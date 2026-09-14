@@ -1,5 +1,4 @@
-# encoding: ascii-8bit
-
+/*
 # Copyright 2022 Ball Aerospace & Technologies Corp.
 # All Rights Reserved.
 #
@@ -14,7 +13,7 @@
 # GNU Affero General Public License for more details.
 
 # Modified by OpenC3, Inc.
-# All changes Copyright 2026, OpenC3, Inc.
+# All changes Copyright 2025, OpenC3, Inc.
 # All Rights Reserved
 #
 # This file may also be used under the terms of a commercial license
@@ -23,27 +22,32 @@
 # Modified by ATTX, Inc.
 # All changes Copyright 2026, ATTX, Inc.
 # All Rights Reserved
+*/
 
-# Create the overall gemspec
-Gem::Specification.new do |s|
-  s.name = 'openc3-cosmos-warplink'
-  s.summary = 'OpenC3 COSMOS WarpLink plugin'
-  s.description = <<-EOF
-    WarpLink plugin for WarpOS flight software, deployed to OpenC3 COSMOS
-  EOF
-  s.authors = ['Alex Jackson']
-  s.email = ['alex.jackson@warpware.co']
-  s.homepage = 'https://github.com/OpenC3/cosmos'
-  s.platform = Gem::Platform::RUBY
-  s.required_ruby_version = '>= 3.0'
+import { createApp, h } from 'vue'
+import singleSpaVue from 'single-spa-vue'
 
-  if ENV['VERSION']
-    s.version = ENV['VERSION'].dup
-  else
-    time = Time.now.strftime("%Y%m%d%H%M%S")
-    s.version = '0.0.0' + ".#{time}"
-  end
-  s.licenses = ['AGPL-3.0-only', 'Nonstandard']
+import App from './App.vue'
+import router from './router'
+import { Dialog, Notify, store, vuetify } from '@openc3/vue-common/plugins'
 
-  s.files = Dir.glob("{targets,lib,tools,microservices}/**/*") + %w(Rakefile README.md LICENSE.txt plugin.txt)
-end
+const vueLifecycles = singleSpaVue({
+  createApp,
+  appOptions: {
+    render() {
+      return h(App, {})
+    },
+    el: '#openc3-tool',
+  },
+  handleInstance: (app) => {
+    app.use(router)
+    app.use(store)
+    app.use(vuetify)
+    app.use(Dialog)
+    app.use(Notify, { store })
+  },
+})
+
+export const bootstrap = vueLifecycles.bootstrap
+export const mount = vueLifecycles.mount
+export const unmount = vueLifecycles.unmount

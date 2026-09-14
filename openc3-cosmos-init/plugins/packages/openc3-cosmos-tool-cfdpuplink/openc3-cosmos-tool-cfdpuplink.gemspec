@@ -14,7 +14,7 @@
 # GNU Affero General Public License for more details.
 
 # Modified by OpenC3, Inc.
-# All changes Copyright 2026, OpenC3, Inc.
+# All changes Copyright 2025, OpenC3, Inc.
 # All Rights Reserved
 #
 # This file may also be used under the terms of a commercial license
@@ -25,15 +25,17 @@
 # All Rights Reserved
 
 # Create the overall gemspec
-Gem::Specification.new do |s|
-  s.name = 'openc3-cosmos-warplink'
-  s.summary = 'OpenC3 COSMOS WarpLink plugin'
+spec = Gem::Specification.new do |s|
+  s.name = 'openc3-cosmos-tool-cfdpuplink'
+  s.summary = 'OpenC3 COSMOS CFDP Uplink Tool'
   s.description = <<-EOF
-    WarpLink plugin for WarpOS flight software, deployed to OpenC3 COSMOS
+    Queues CFDP file uplinks for the WarpLink CFDP_SERVICE microservice,
+    requests files from WarpOS, and downloads received files.
   EOF
-  s.authors = ['Alex Jackson']
-  s.email = ['alex.jackson@warpware.co']
+  s.authors = ['Ryan Melton', 'Jason Thomas']
+  s.email = ['ryan@openc3.com', 'jason@openc3.com']
   s.homepage = 'https://github.com/OpenC3/cosmos'
+
   s.platform = Gem::Platform::RUBY
   s.required_ruby_version = '>= 3.0'
 
@@ -43,7 +45,7 @@ Gem::Specification.new do |s|
     time = Time.now.strftime("%Y%m%d%H%M%S")
     s.version = '0.0.0' + ".#{time}"
   end
-  s.licenses = ['AGPL-3.0-only', 'Nonstandard']
+  s.licenses = ['Nonstandard']
 
-  s.files = Dir.glob("{targets,lib,tools,microservices}/**/*") + %w(Rakefile README.md LICENSE.txt plugin.txt)
+  s.files = Dir.glob("{targets,lib,tools,microservices}/**/*") + %w(Rakefile LICENSE.txt README.md plugin.txt)
 end

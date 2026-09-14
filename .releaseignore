@@ -1,0 +1,28 @@
+# Paths removed from the exported tree by scripts/release/warplink_release.sh.
+# Patterns are root-relative bash globs (globstar enabled). Only remove things
+# that are not needed to build and run WarpLink (./openc3.sh start).
+# NOTE: docs.openc3.com/ is a build context for openc3-cosmos-init -- keep it.
+
+# Release tooling
+.releaseignore
+scripts/release/
+
+# CI/CD and upstream OpenC3 project tooling
+.github/
+codecov.yml
+sonar-project.properties
+trivy.yaml
+.grype.yaml
+.whitelist
+roodi.yml
+CONTRIBUTING.txt
+
+# Generated docs site (GitHub Pages output, not used by the build)
+docs/
+
+# Tests and dev-only
+playwright/
+hooks/
+.claude/
+CLAUDE.md
+.vsls.json

@@ -1,0 +1,35 @@
+# Copyright 2022 Ball Aerospace & Technologies Corp.
+# All Rights Reserved.
+#
+# This program is free software; you can modify and/or redistribute it
+# under the terms of the GNU Affero General Public License
+# as published by the Free Software Foundation; version 3 with
+# attribution addendums as found in the LICENSE.txt
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# Modified by OpenC3, Inc.
+# All changes Copyright 2025, OpenC3, Inc.
+# All Rights Reserved
+#
+# This file may also be used under the terms of a commercial license
+# if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
+
+COMMAND <<TARGET>> <<PACKET_NAME>> <<ENDIANNESS>> "<<DESCRIPTION>>"
+  # Bare CFDP PDU -- no CCSDS wrapper, no separate outer CRC (the PDU's own
+  # inner CRC, already baked into these bytes by the CFDP microservice, is
+  # what CommandManager's generic packet-CRC check validates on receipt).
+  # Unlike the telemetry side, the header can't be decomposed into individual
+  # ID_ITEM/ITEM parameters here: those work for telemetry because COSMOS is
+  # decoding already-known bytes, but for an outgoing command COSMOS would be
+  # constructing bytes from each parameter's fixed default, which would
+  # ignore the real header content (different per PDU type and per call)
+  # already built into this field's value before cmd() is invoked.
+<<ADDITIONAL_FIELDS>>

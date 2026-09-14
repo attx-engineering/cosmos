@@ -24,6 +24,15 @@
 
 LANGUAGE python
 
+# Not every packet in this plugin shares a uniform ID_ITEM layout (the CFDP
+# telemetry packet identifies off multiple sub-byte bitfields in the CFDP
+# header, unlike the STREAM_ID + APID_INSTANCE used by the CCSDS-style
+# packets) -- without this, OpenC3's default hash-based identification reads
+# every incoming packet's id values using only the first packet defined in
+# this target, which silently breaks identification for any packet whose
+# ID_ITEMs don't match that layout.
+TLM_UNIQUE_ID_MODE
+
 # Ignored Parameters
 IGNORE_PARAMETER PKTID
 IGNORE_PARAMETER STREAM_ID
