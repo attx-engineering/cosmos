@@ -19,7 +19,7 @@ or TCP/IP.
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/` | The CFDP Uplink tool |
 | `compose.yaml` | Container configuration, including the telemetry ports published into COSMOS |
 | `bridge.txt` | Windows serial/USB bridge configuration, run with `openc3cli bridge bridge.txt` |
-| `cfdp/` | Host directory for CFDP transfers (git-ignored, bind mounted into the containers) |
+| `cfdp/` | Host directory for CFDP transfers (ships empty; contents git-ignored, bind mounted into the containers) |
 | `openc3.sh` | Container control and CLI wrapper |
 
 Everything else is upstream OpenC3 COSMOS.
@@ -56,7 +56,6 @@ Everything else is upstream OpenC3 COSMOS.
 3. **Build and start the containers.**
 
    ```bash
-   mkdir -p cfdp       # CFDP transfer directory; create it before Docker does, as root
    ./openc3.sh start   # builds the containers from this source, then runs them
    ./openc3.sh run     # afterwards: runs the already-built containers
    ```
@@ -301,8 +300,10 @@ carried as bare CFDP PDUs (no CCSDS wrapper) on the target's normal interface.
   downloads received files — including partial ones, each labelled Complete,
   Receiving, Incomplete, or Failed. Uploading requires the admin role.
 
-The `cfdp/` directory must exist before the containers start, or Docker creates
-it owned by root and the service cannot write to it.
+The `cfdp/` directory ships with WarpLink, kept by an empty `cfdp/.gitkeep`.
+Do not delete it: if it is missing when the containers start, Docker creates it
+owned by root and the service cannot write to it. Recreate it with `mkdir cfdp`
+as your normal user.
 
 ## Troubleshooting
 

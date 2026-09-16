@@ -30,6 +30,8 @@ cmd_tlm.json
 graph_tree.json
 # CFDP transfers (bind mounted into the containers, see compose.yaml)
 /cfdp/*
+# ...but ship the empty directory, so users need not create it
+!/cfdp/.gitkeep
 
 # local env files
 .env.local
