@@ -27,13 +27,14 @@ trap cleanup EXIT
 usage() {
   cat <<EOF
 Usage:
-  $0 --tag <tag> [--dist-url <git@...>] [--dist-branch <branch>] [--source-branch <branch>] [--dry-run]
+  $0 --tag <tag> [--dist-url <git@...>] [--dist-branch <branch>] [--source-branch <branch>] [--allow-old-tag] [--dry-run]
 
 Options:
   --tag            REQUIRED. Tag name to release, e.g. 26.09 (created on origin/<source-branch> if missing).
   --dist-url       Distribution repo URL (default: ${DIST_URL_DEFAULT})
   --dist-branch    Distribution branch to update (default: ${DIST_BRANCH_DEFAULT})
   --source-branch  Branch to tag when the tag doesn't exist yet (default: ${SOURCE_BRANCH_DEFAULT})
+  --allow-old-tag  Release an existing tag even if it is behind origin/<source-branch>.
   --dry-run        Build the release commit but don't create/push tags or push to distribution.
                    The staged distribution checkout is kept for inspection.
 
@@ -53,6 +54,7 @@ DIST_URL="${DIST_URL_DEFAULT}"
 DIST_BRANCH="${DIST_BRANCH_DEFAULT}"
 SOURCE_BRANCH="${SOURCE_BRANCH_DEFAULT}"
 DRY_RUN="false"
+ALLOW_OLD_TAG="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -61,6 +63,7 @@ while [[ $# -gt 0 ]]; do
     --dist-branch) DIST_BRANCH="${2:-}"; shift 2;;
     --source-branch) SOURCE_BRANCH="${2:-}"; shift 2;;
     --dry-run) DRY_RUN="true"; shift;;
+    --allow-old-tag) ALLOW_OLD_TAG="true"; shift;;
     -h|--help) usage; exit 0;;
     *) err "Unknown argument: $1"; usage; exit 1;;
   esac
@@ -103,6 +106,16 @@ if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
   SOURCE_REF="refs/tags/${TAG}"
   SOURCE_SHA="$(git rev-list -n1 "${SOURCE_REF}")"
   info "Found existing tag '${TAG}' @ ${SOURCE_SHA}"
+  # An existing tag is released as-is. Refuse if it has fallen behind the branch,
+  # or fixes pushed since the tag was made silently miss the release.
+  git fetch --quiet origin "${SOURCE_BRANCH}"
+  BEHIND="$(git rev-list --count "${SOURCE_SHA}..refs/remotes/origin/${SOURCE_BRANCH}")"
+  if [[ "${BEHIND}" -gt 0 && "${ALLOW_OLD_TAG}" != "true" ]]; then
+    err "Tag '${TAG}' is ${BEHIND} commit(s) behind origin/${SOURCE_BRANCH}. These would NOT be released:"
+    git --no-pager log --oneline "${SOURCE_SHA}..refs/remotes/origin/${SOURCE_BRANCH}" | sed "s/^/  /" >&2
+    err "Use a new tag to release the latest code, or pass --allow-old-tag to release '${TAG}' as-is."
+    exit 1
+  fi
 else
   git fetch --quiet origin "${SOURCE_BRANCH}"
   SOURCE_REF="refs/remotes/origin/${SOURCE_BRANCH}"
