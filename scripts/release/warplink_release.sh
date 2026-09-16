@@ -176,8 +176,22 @@ cd "${PUSH_DIR}"
 find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} +
 cp -a "${EXPORT_DIR}/." .
 
-git add -A
+# --force: this tree is exactly the git archive export, so every file in it is
+# release content. Without it, files force-added in the source repo that match a
+# .gitignore (e.g. the openc3-ruby/*.tar.gz build inputs) are silently dropped.
+git add -A --force
 git commit --quiet --allow-empty -m "Release ${TAG} from ${SOURCE_SHA}"
+
+# Guard: the release commit must contain every file that was exported.
+MISSING="$(LC_ALL=C comm -23 \
+  <(cd "${EXPORT_DIR}" && find . \( -type f -o -type l \) | sed "s|^\./||" | LC_ALL=C sort) \
+  <(git -c core.quotepath=off ls-files | LC_ALL=C sort))"
+if [[ -n "${MISSING}" ]]; then
+  err "Release commit is missing files from the export:"
+  printf "%s\n" "${MISSING}" | sed "s/^/  /" >&2
+  exit 1
+fi
+ok "Release commit contains all exported files"
 git tag -a "${TAG}" -m "Release ${TAG}"
 ok "Created release commit $(git rev-parse --short HEAD)"
 git --no-pager show --stat --format='%s' HEAD | tail -n 1

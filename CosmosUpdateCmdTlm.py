@@ -13,7 +13,7 @@
 # GNU Affero General Public License for more details.
 
 # Modified by OpenC3, Inc.
-# All changes Copyright 2025, OpenC3, Inc.
+# All changes Copyright 2026, OpenC3, Inc.
 # All Rights Reserved
 #
 # This file may also be used under the terms of a commercial license
@@ -167,6 +167,26 @@ _UNITS_FULL: dict[str, tuple[str, str]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# COSMOS name sanitizing
+# ---------------------------------------------------------------------------
+# COSMOS reserves "__" as its internal TARGET__PACKET__ITEM separator and
+# rejects any target, packet, item or state name containing it.  Some
+# cmd_tlm.json names carry double underscores (and joining a prefix to a name
+# with its own leading/trailing "_" can make one), so every emitted name goes
+# through _cosmos_name(), which collapses each run of underscores to one.
+_renamed: set[str] = set()
+
+
+def _cosmos_name(name: str) -> str:
+    """Collapse runs of underscores in a COSMOS name, reporting each rename once."""
+    clean = re.sub(r"_{2,}", "_", name)
+    if clean != name and name not in _renamed:
+        _renamed.add(name)
+        print(f"Renamed      : {name} -> {clean}")
+    return clean
+
+
 def _units_line(abbr: str) -> str:
     """Return a COSMOS UNITS line for the given unit abbreviation."""
     full, short = _UNITS_FULL.get(abbr, (abbr, abbr))
@@ -254,7 +274,7 @@ def _state_lines(field: dict) -> list:
     """
     states = field.get("states")
     if states:
-        return [f"    STATE {st['name']} {st['value']}\n" for st in states]
+        return [f"    STATE {_cosmos_name(st['name'])} {st['value']}\n" for st in states]
     if field["type"].lower() == "bool":
         return ["    STATE FALSE 0\n", "    STATE TRUE 1\n"]
     return []
@@ -276,17 +296,18 @@ def _format_tlm_item(field: dict, append_key: str = "APPEND_ITEM") -> str:
     array_length = field.get("array_length", 0) or 0
     description  = field.get("description", "")
     units        = field.get("units")
+    name         = _cosmos_name(field["id"])
 
     lines = []
 
     if cosmos_type == "STRING":
         # Single STRING item for char[]
         total_bits = bits_per  # already total from _resolve_type
-        line = f"  {append_key:<18}{field['id']:<30}{total_bits:<10}{cosmos_type:<10}\"{description}\"\n"
+        line = f"  {append_key:<18}{name:<30}{total_bits:<10}{cosmos_type:<10}\"{description}\"\n"
         lines.append(line)
     elif array_length > 0:
         for i in range(array_length):
-            item_name = f"{field['id']}_{i}"
+            item_name = _cosmos_name(f"{name}_{i}")
             line = (
                 f"  {append_key:<18}{item_name:<30}{bits_per:<10}"
                 f"{cosmos_type:<10}\"{description}\"\n"
@@ -298,7 +319,7 @@ def _format_tlm_item(field: dict, append_key: str = "APPEND_ITEM") -> str:
                 lines.append(_units_line(units))
     else:
         line = (
-            f"  {append_key:<18}{field['id']:<30}{bits_per:<10}"
+            f"  {append_key:<18}{name:<30}{bits_per:<10}"
             f"{cosmos_type:<10}\"{description}\"\n"
         )
         lines.append(line)
@@ -321,7 +342,7 @@ def _format_tlm_packets(template: str, target: str, pkt: dict, short_name: str) 
     rather than STREAM_ID alone.
     """
     apid_cosmos = pkt["apid"] | _TLM_APID_MASK
-    base_name   = f"{short_name}_{pkt['name']}"
+    base_name   = _cosmos_name(f"{short_name}_{pkt['name']}")
     regs        = pkt["registrations"]
     suffixed    = ALWAYS_SUFFIX_INSTANCE or len(regs) > 1
 
@@ -384,24 +405,25 @@ def _format_cmd_parameter(field: dict, append_key: str = "APPEND_PARAMETER") -> 
     array_length = field.get("array_length", 0) or 0
     description  = field.get("description", "")
     units        = field.get("units")
+    name         = _cosmos_name(field["id"])
 
     lines = []
 
     if cosmos_type == "STRING":
         total_bits = bits_per  # already total from _resolve_type
         line = (
-            f"  {append_key:<18}{field['id']:<30}{total_bits:<10}"
+            f"  {append_key:<18}{name:<30}{total_bits:<10}"
             f"{cosmos_type:<10}{'':<10}{'':<10}{''!r:<10}\"{description}\"\n"
         )
         # STRING parameters: no min/max; default is empty string
         line = (
-            f"  {append_key:<18}{field['id']:<30}{total_bits:<10}"
+            f"  {append_key:<18}{name:<30}{total_bits:<10}"
             f"STRING    \"\"        \"{description}\"\n"
         )
         lines.append(line)
     elif array_length > 0:
         for i in range(array_length):
-            item_name = f"{field['id']}_{i}"
+            item_name = _cosmos_name(f"{name}_{i}")
             line = (
                 f"  {append_key:<18}{item_name:<30}{bits_per:<10}"
                 f"{cosmos_type:<10}{'MIN':<10}{'MAX':<10}{'0':<10}\"{description}\"\n"
@@ -412,7 +434,7 @@ def _format_cmd_parameter(field: dict, append_key: str = "APPEND_PARAMETER") -> 
     else:
         default = _state_default(field)
         line = (
-            f"  {append_key:<18}{field['id']:<30}{bits_per:<10}"
+            f"  {append_key:<18}{name:<30}{bits_per:<10}"
             f"{cosmos_type:<10}{'MIN':<10}{'MAX':<10}{default:<10}\"{description}\"\n"
         )
         lines.append(line)
@@ -426,7 +448,7 @@ def _format_cmd_parameter(field: dict, append_key: str = "APPEND_PARAMETER") -> 
 def _format_cmd_packet(template: str, target: str, pkt: dict, short_name: str) -> str:
     """Render one COMMAND packet block from template + packet dict."""
     apid_cosmos = pkt["apid"] | _CMD_APID_MASK
-    cosmos_name = f"{short_name}_{pkt['name']}"
+    cosmos_name = _cosmos_name(f"{short_name}_{pkt['name']}")
     # payload + secondary header (8 B) + CRC (2 B), minus 1 per CCSDS Space Packet
     # Protocol section 4.1.3.5.2 -- the packet data length field encodes the true
     # length minus one. readSSPHeader() on the flight side adds 1 back when
@@ -462,7 +484,7 @@ def _format_cfdp_cmd_packet(template: str, target: str, pkt: dict, short_name: s
     CommandManager.cpp). See templates/cfdp_command.txt for why the header
     can't be decomposed into individual parameters the way telemetry's is.
     """
-    cosmos_name = f"{short_name}_{pkt['name']}"
+    cosmos_name = _cosmos_name(f"{short_name}_{pkt['name']}")
     fields = pkt.get("fields", [])
     if len(fields) != 1:
         raise ValueError(
