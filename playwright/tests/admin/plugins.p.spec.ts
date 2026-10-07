@@ -101,6 +101,9 @@ test('shows and hides built-in tools', async ({ page, utils }) => {
     'openc3-cosmos-tool-simcontrol',
   )
   await expect(page.locator('id=openc3-tool')).not.toContainText(
+    'openc3-cosmos-tool-cfdpuplink',
+  )
+  await expect(page.locator('id=openc3-tool')).not.toContainText(
     'openc3-cosmos-tool-tablemanager',
   )
   await expect(page.locator('id=openc3-tool')).not.toContainText(
@@ -179,6 +182,9 @@ test('shows and hides built-in tools', async ({ page, utils }) => {
   )
   await expect(page.locator('id=openc3-tool')).toContainText(
     'openc3-cosmos-tool-simcontrol',
+  )
+  await expect(page.locator('id=openc3-tool')).toContainText(
+    'openc3-cosmos-tool-cfdpuplink',
   )
   await expect(page.locator('id=openc3-tool')).toContainText(
     'openc3-cosmos-tool-tablemanager',

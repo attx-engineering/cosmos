@@ -29,6 +29,7 @@ class LocalMode:
     DEFAULT_PLUGINS = [
         "openc3-cosmos-tool-admin",
         "openc3-cosmos-tool-bucketexplorer",
+        "openc3-cosmos-tool-cfdpuplink",
         "openc3-cosmos-tool-cmdsender",
         "openc3-cosmos-tool-cmdqueue",
         "openc3-cosmos-tool-cmdhistory",

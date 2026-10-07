@@ -1,0 +1,41 @@
+# Copyright 2022 Ball Aerospace & Technologies Corp.
+# All Rights Reserved.
+#
+# This program is free software; you can modify and/or redistribute it
+# under the terms of the GNU Affero General Public License
+# as published by the Free Software Foundation; version 3 with
+# attribution addendums as found in the LICENSE.txt
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# Modified by OpenC3, Inc.
+# All changes Copyright 2025, OpenC3, Inc.
+# All Rights Reserved
+#
+# This file may also be used under the terms of a commercial license
+# if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
+
+TELEMETRY <<TARGET>> <<PACKET_NAME>> <<ENDIANNESS>> "<<DESCRIPTION>>"
+
+  ID_ITEM CFDP_VERSION       0  3 UINT 1
+  ITEM    CFDP_PDU_TYPE      3  1 UINT
+  ITEM    CFDP_DIRECTION     4  1 UINT
+  ITEM    CFDP_MODE          5  1 UINT
+  ID_ITEM CFDP_FIXED_SUFFIX  6  2 UINT 2
+
+  ITEM CFDP_DATA_LENGTH      8 16 UINT
+
+  # 00010: unsegmented, two-byte entity IDs, no segment metadata
+  ID_ITEM CFDP_BYTE3_PREFIX 24 5 UINT 2
+
+  # 1 means a two-byte transaction sequence number
+  ITEM CFDP_SEQ_LENGTH      29 3 UINT
+
+  ITEM CFDP_PDU 0 0 BLOCK
