@@ -19,6 +19,11 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All rights reserved
+
 
 # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
 
@@ -241,6 +246,8 @@ Rails.application.routes.draw do
     get "/info" => "info#info"
 
     resources :roles, only: [:index, :create]
+    # NOTE: must precede /roles/:id so 'permissions' isn't matched as an id
+    get '/roles/permissions', to: 'roles#permissions'
     get '/roles/:id', to: 'roles#show', id: /[^\/]+/
     match '/roles/:id', to: 'roles#update', id: /[^\/]+/, via: [:patch, :put]
     delete '/roles/:id', to: 'roles#destroy', id: /[^\/]+/

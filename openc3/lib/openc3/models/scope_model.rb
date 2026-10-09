@@ -26,6 +26,7 @@
 
 require "openc3/version"
 require "openc3/models/model"
+require "openc3/models/role_model"
 require "openc3/models/plugin_model"
 require "openc3/models/microservice_model"
 require "openc3/models/setting_model"
@@ -139,6 +140,10 @@ module OpenC3
       @tool_log_retain_time = @tool_log_retain_time.to_i if @tool_log_retain_time
       @cleanup_poll_time = @cleanup_poll_time.to_i
       super
+
+      # Every scope needs the built-in roles to exist before anyone can be
+      # granted anything. Seeding is idempotent and leaves edited roles alone.
+      RoleModel.seed(scope: @name)
 
       if ENTERPRISE
         # If we're updating the scope and disabling command_authority

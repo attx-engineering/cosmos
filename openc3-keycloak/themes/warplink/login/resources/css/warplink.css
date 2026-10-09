@@ -1,0 +1,11 @@
+/* The parent theme paints its own logo as a background image on this element
+   and hides the text inside it, so replacing the image is what swaps the
+   branding. Sized to the logo's 1.8:1 aspect so it is not distorted. */
+div.kc-logo-text {
+  background-image: url(../img/warp-logo.png);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 220px;
+  height: 122px;
+}

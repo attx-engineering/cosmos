@@ -17,6 +17,8 @@ or TCP/IP.
 | `openc3-cosmos-warplink/microservices/CFDP_SERVICE/` | CFDP file transfer microservice |
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/` | The Sim Control tool |
 | `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/` | The CFDP Uplink tool |
+| `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-calendar/` | The Calendar tool |
+| `openc3-keycloak/` | Keycloak realm and access control setup |
 | `compose.yaml` | Container configuration, including the telemetry ports published into COSMOS |
 | `bridge.txt` | Windows serial/USB bridge configuration, run with `openc3cli bridge bridge.txt` |
 | `cfdp/` | Host directory for CFDP transfers (ships empty; contents git-ignored, bind mounted into the containers) |
@@ -90,6 +92,22 @@ Everything else is upstream OpenC3 COSMOS.
 Any change to `plugin.txt`, `cmd.txt`, `tlm.txt`, or the target `lib/` needs a
 new gem: rebuild with an incremented `VERSION` and reinstall it through the
 Admin Console. Regenerating from a new `cmd_tlm.json` (step 2) counts.
+
+Changing a **built-in tool** (Calendar, CFDP Uplink, Sim Control, the base UI)
+is different and catches people out. Those gems are versioned by the COSMOS
+release, so `./openc3.sh build` produces a gem with the same version already
+installed. COSMOS compares versions, logs `No version change detected`, and
+skips the install — leaving the old compiled JavaScript in place. The tool still
+loads and works, it is just running the previous code. Force it:
+
+```bash
+docker compose -f compose.yaml run --rm --no-deps \
+  -e OPENC3_FORCE_INSTALL=1 --entrypoint sh openc3-cosmos-init \
+  -c 'ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-calendar-*.gem'
+```
+
+Then hard refresh the browser (Ctrl+Shift+R) — asset filenames are hashed, so
+the old ones stop existing and a cached page points at files that are gone.
 
 A change to `compose.yaml` needs `./openc3.sh run` to recreate the affected
 containers; it does not need a new gem.
@@ -305,6 +323,73 @@ Do not delete it: if it is missing when the containers start, Docker creates it
 owned by root and the service cannot write to it. Recreate it with `mkdir cfdp`
 as your normal user.
 
+## Calendar and scheduling
+
+The Calendar tool schedules commands and scripts to run at a future date and
+time. Work is organised into **timelines**, each of which gets its own scheduler
+process; an activity on a timeline is one of:
+
+| Kind | What happens at its start time |
+| --- | --- |
+| Command | The command is sent |
+| Script | The script is launched in Script Runner and tracked to completion |
+| Reserve | Nothing runs. It occupies the slot for reference — this is also how pass windows are represented |
+
+Activities can repeat on a schedule, and each one records what actually
+happened, so a failed command or a script that crashed is visible on the
+calendar rather than silently missed. A timeline can be paused, which leaves its
+activities in place but stops them executing.
+
+The calendar has day, week, month, gantt and list views. The gantt view zooms
+with the scroll wheel and pans by dragging, which is what makes a ten minute
+pass usable inside a week-long window.
+
+### Satellite passes
+
+Pass windows are `reserve` activities on a dedicated timeline, so they block out
+visibility on the calendar and commands can be scheduled inside them. A script
+publishes them:
+
+```python
+create_pass_activities([
+    {"start": aos, "stop": los, "satellite": "SAT1", "ground_station": "GS1"},
+])
+```
+
+`start` and `stop` accept datetimes, ISO 8601 strings, or epoch seconds. Re-run
+it against updated propagation and it replaces the passes in that range rather
+than duplicating them — commands you scheduled *inside* a window are left alone,
+because those are yours and not the propagator's. Passes already underway are
+skipped and reported rather than failing the whole batch. There is a Ruby
+equivalent with the same name.
+
+## Access control
+
+By default WarpLink uses a single shared password and everyone who has it can do
+everything. Role based access control replaces that with per-user logins backed
+by [Keycloak](openc3-keycloak/README.md), and is **off unless
+`OPENC3_KEYCLOAK_URL` is set** in `.env`.
+
+| Role | Grants |
+| --- | --- |
+| `admin` | Everything, including simulation control and role administration |
+| `operator` | Commands and scripts on every target except `SIM`; no Sim Control tool |
+| `viewer` | Read-only telemetry and scripts; no `SIM`, no Sim Control tool |
+
+Custom roles pick their own permissions, which targets they apply to, and which
+tools appear in the nav. Keycloak holds the role *names* and who has them;
+COSMOS holds what each role *grants*, so permissions can be changed without
+touching Keycloak.
+
+Enforcement is server side — hiding a tool is only cosmetic, and every request
+is checked independently. See [openc3-keycloak/README.md](openc3-keycloak/README.md)
+for adding users, custom roles, and hosting Keycloak on another machine.
+
+> **Not yet enforced:** scheduled calendar activities and scripts run under the
+> internal service account, so they execute with full rights regardless of who
+> created them. Until that is closed, treat the ability to schedule an activity
+> or run a script as equivalent to full command authority.
+
 ## Troubleshooting
 
 Most of the time, disconnecting and reconnecting (via the "Action" column on the
@@ -328,6 +413,16 @@ CmdTlmServer tab) or rebuilding and reinstalling the plugin is enough.
 4. If a host-side splitter or simulator fails to start with `EADDRINUSE`, a
    write port is published in `compose.yaml`. Remove that mapping and run
    `./openc3.sh run`.
+5. If a change to a built-in tool does not appear, the plugin install was
+   skipped because its version did not change — see
+   [Rebuilding after a change](#rebuilding-after-a-change).
+6. If a scheduled activity never runs, check the timeline is not paused (the
+   pause control is beside its name in the calendar sidebar) and that the
+   activity's own history does not show it was missed while the system was down.
+7. With access control enabled, "invalid username or password" most often means
+   the user has no password credential rather than a wrong one — creating a user
+   in Keycloak does not create a credential. See
+   [openc3-keycloak/README.md](openc3-keycloak/README.md).
 
 ## Upstream
 

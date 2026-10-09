@@ -15,6 +15,8 @@
 # if purchased from OpenC3, Inc.
 
 import json
+from datetime import datetime, timezone
+
 import openc3.script
 from openc3.environment import OPENC3_SCOPE
 
@@ -99,6 +101,114 @@ def delete_timeline_activity(name, start, uuid, scope=OPENC3_SCOPE):
         "delete", f"/openc3-api/timeline/{name}/activity/{start}/{uuid}", scope=scope
     )
     return _handle_response(response, "Failed to delete timeline activity")
+
+
+def create_pass_activities(
+    passes, timeline="PASSES", color="#8E24AA", replace=True, scope=OPENC3_SCOPE
+):
+    """Publish satellite pass windows onto a timeline as 'reserve' activities.
+
+    A reserve activity occupies time on the calendar without executing
+    anything, which is exactly what a pass window is: it shows when the
+    spacecraft is visible so commands and scripts can be scheduled inside it.
+
+    Parameters:
+        passes: iterable of dicts, each needing a "start" and a "stop" given as
+            a datetime, an ISO 8601 string, or epoch seconds. Any other keys
+            (satellite, ground_station, max_elevation, ...) are stored on the
+            activity and shown in the calendar.
+        timeline: timeline to publish onto, created if missing
+        color: color for the timeline when it has to be created
+        replace: remove existing reserve activities that fall in the range
+            being published before adding the new ones, so re-running against
+            updated propagation replaces passes rather than duplicating them
+
+    Returns:
+        dict with counts of what happened and the skipped passes listed
+    """
+    normalized = []
+    for entry in passes:
+        entry = dict(entry)
+        start = _to_datetime(entry.pop("start", None))
+        stop = _to_datetime(entry.pop("stop", None))
+        if start is None or stop is None:
+            raise RuntimeError(f"Pass requires both a start and a stop: {entry}")
+        if start >= stop:
+            raise RuntimeError(f"Pass start {start} is not before stop {stop}")
+        normalized.append({"start": start, "stop": stop, "data": entry})
+    if not normalized:
+        return {"created": 0, "deleted": 0, "skipped": []}
+
+    # Create the timeline on first use so callers don't have to
+    if not any(t["name"] == timeline for t in list_timelines(scope=scope)):
+        create_timeline(timeline, color=color, scope=scope)
+
+    normalized.sort(key=lambda entry: entry["start"])
+    range_start = normalized[0]["start"]
+    range_stop = normalized[-1]["stop"]
+
+    deleted = 0
+    if replace:
+        existing = get_timeline_activities(
+            timeline,
+            start=range_start.isoformat(),
+            stop=range_stop.isoformat(),
+            scope=scope,
+        )
+        for activity in existing:
+            # Only clear passes - a command or script scheduled inside a pass
+            # window belongs to the operator, not to the propagation run.
+            if activity["kind"] != "reserve":
+                continue
+            delete_timeline_activity(
+                timeline, activity["start"], activity["uuid"], scope=scope
+            )
+            deleted += 1
+
+    created = 0
+    skipped = []
+    now = datetime.now(timezone.utc)
+    for entry in normalized:
+        # Activities cannot be created in the past, so a pass already underway
+        # is reported rather than raising and abandoning the rest of the set.
+        if entry["start"] <= now:
+            skipped.append(
+                {
+                    "start": entry["start"],
+                    "stop": entry["stop"],
+                    "reason": "already started",
+                }
+            )
+            continue
+        create_timeline_activity(
+            timeline,
+            "reserve",
+            entry["start"],
+            entry["stop"],
+            data=entry["data"],
+            scope=scope,
+        )
+        created += 1
+    return {"created": created, "deleted": deleted, "skipped": skipped}
+
+
+# Accepts the several shapes a pass time can arrive in from a propagator.
+# Naive datetimes are treated as UTC, which is what propagators emit.
+def _to_datetime(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value, tz=timezone.utc)
+    if isinstance(value, str):
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
+    raise RuntimeError(f"Cannot interpret {value!r} as a time")
 
 
 # Helper method to handle the response

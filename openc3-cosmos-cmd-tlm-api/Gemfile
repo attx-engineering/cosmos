@@ -57,6 +57,10 @@ unless ENV['SKIP_DEV_GEMS']
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+# Verifies Keycloak access tokens for role based access control.
+# Declared here as well as in the openc3 gemspec because these apps pin a
+# published openc3 version, so a gemspec change alone never reaches this lock.
+gem 'jwt', '~> 2.9'
 gem 'tzinfo-data'
 
 if ENV['OPENC3_DEVEL']
