@@ -13,6 +13,8 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 
 import os
 import json
@@ -25,6 +27,7 @@ class LocalMode:
     DEFAULT_PLUGINS = [
         "openc3-cosmos-tool-admin",
         "openc3-cosmos-tool-bucketexplorer",
+        "openc3-cosmos-tool-cfdpuplink",
         "openc3-cosmos-tool-cmdsender",
         "openc3-cosmos-tool-cmdqueue",
         "openc3-cosmos-tool-cmdhistory",
@@ -37,6 +40,7 @@ class LocalMode:
         "openc3-cosmos-tool-limitsmonitor",
         "openc3-cosmos-tool-packetviewer",
         "openc3-cosmos-tool-scriptrunner",
+        "openc3-cosmos-tool-simcontrol",
         "openc3-cosmos-tool-tablemanager",
         "openc3-cosmos-tool-tlmgrapher",
         "openc3-cosmos-tool-tlmviewer",

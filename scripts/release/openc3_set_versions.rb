@@ -15,6 +15,8 @@
 
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 
 # Set openc3 main gem version path
 base_path = File.expand_path(File.join(__dir__, '..', '..'))
@@ -103,6 +105,7 @@ package_dot_json_files = [
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-demo/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-admin/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-bucketexplorer/package.json',
+  'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cmdsender/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cmdtlmserver/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-dataextractor/package.json',
@@ -112,6 +115,7 @@ package_dot_json_files = [
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-limitsmonitor/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-packetviewer/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-scriptrunner/package.json',
+  'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tablemanager/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tlmgrapher/package.json',
   'openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-tlmviewer/package.json',

@@ -18,6 +18,8 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 -->
 
 <template>
@@ -114,6 +116,7 @@
       v-if="showActivityUpdate"
       v-model="showActivityUpdate"
       :activity="editActivity"
+      :timelines="timelines"
       :time-zone="timeZone"
       @update="updateActivity"
     />
@@ -160,6 +163,10 @@ export default {
     events: {
       type: Array,
       required: true,
+    },
+    timelines: {
+      type: Array,
+      default: () => [],
     },
     modelValue: {
       type: Boolean,

@@ -61,6 +61,9 @@
     <link rel="preload" href="/js/vue-router-4.4.4.min.js" as="script" />
     <link rel="preload" href="/js/vuex-4.1.0.min.js" as="script" />
     <script src="/js/browsercheck.js"></script>
+    <!-- Sets openc3_keycloak_* when an identity provider is configured.
+         Must precede auth.js, which uses them to pick an auth mode. -->
+    <script src="/openc3-api/auth.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/import-map-overrides-6.1.0.min.js"></script>
     <!-- systemjs homepage: https://github.com/systemjs/systemjs/releases

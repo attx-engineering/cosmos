@@ -19,6 +19,8 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 
 require 'openc3/models/model'
 require 'openc3/models/activity_model'
@@ -139,7 +141,7 @@ module OpenC3
         name: @name,
         folder_name: nil,
         cmd: ['ruby', 'timeline_microservice.rb', @name],
-        work_dir: '/openc3-enterprise/lib/openc3-enterprise/microservices',
+        work_dir: '/openc3/lib/openc3/microservices',
         options: [],
         topics: topics,
         target_names: [],

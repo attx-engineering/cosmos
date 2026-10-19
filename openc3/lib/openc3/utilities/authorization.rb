@@ -19,8 +19,16 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 
 require 'openc3/models/auth_model'
+# Role based access control is installed by the WarpLink rbac feature. Without
+# it, authorization behaves exactly as in upstream COSMOS Core.
+begin
+  require 'openc3/utilities/rbac'
+rescue LoadError
+end
 
 begin
   require 'openc3-enterprise/utilities/authorization'
@@ -40,6 +48,19 @@ rescue LoadError
       def authorize(permission: nil, target_name: nil, packet_name: nil, interface_name: nil, router_name: nil, manual: false, scope: nil, token: nil)
         raise AuthError.new("Scope is required") unless scope
 
+        # When an identity provider is configured, role based access control is
+        # the authority and the shared password is not accepted for user
+        # requests. Without one, fall back to the single password behaviour so a
+        # local or offline deployment still works.
+        if defined?(OpenC3::Rbac) && OpenC3::Rbac.enabled?
+          return OpenC3::Rbac.authorize!(
+            permission: permission,
+            target_name: target_name,
+            scope: scope,
+            token: token,
+          )
+        end
+
         if $openc3_authorize
           raise AuthError.new("Token is required") unless token
           unless OpenC3::AuthModel.verify(token)
@@ -49,8 +70,17 @@ rescue LoadError
         return "anonymous"
       end
 
-      def user_info(_token)
-        {} # Enterprise does stuff here
+      def user_info(token)
+        return {} unless defined?(OpenC3::Rbac) && OpenC3::Rbac.enabled?
+        claims = OpenC3::Rbac.verify_token(token)
+        {
+          'username' => OpenC3::Rbac.username_from_claims(claims),
+          'roles' => OpenC3::Rbac.roles_from_claims(claims),
+        }
+      rescue StandardError
+        # Callers use this for display and logging, so an unreadable token here
+        # must not raise - the request itself is still gated by authorize.
+        {}
       end
     end
   end

@@ -18,10 +18,12 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 -->
 
 <template>
-  <div style="cursor: pointer" @click="showUpgradeToEnterpriseDialog = true">
+  <div>
     <v-select
       v-model="scope"
       :items="scopes"
@@ -32,26 +34,16 @@
       hide-details
       style="max-width: 150px"
     />
-    <upgrade-to-enterprise-dialog
-      v-model="showUpgradeToEnterpriseDialog"
-      reason="Enterprise allows additional Scopes"
-    />
   </div>
 </template>
 
 <script>
-import { UpgradeToEnterpriseDialog } from '@/components'
-
 export default {
-  components: {
-    UpgradeToEnterpriseDialog,
-  },
   data: function () {
     return {
       // COSMOS Core only has one scope: 'DEFAULT'
       scopes: ['DEFAULT'],
       scope: 'DEFAULT',
-      showUpgradeToEnterpriseDialog: false,
     }
   },
 }

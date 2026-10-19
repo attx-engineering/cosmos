@@ -40,6 +40,13 @@ http:
         replacement: "$1.html"
   routers:
     # Note: Priorities control router check order with highest priority evaluated first
+    # Route to Keycloak. Same-origin on purpose: the browser then talks to the
+    # identity provider without cross-origin requests, and the redirect URIs in
+    # the realm stay valid whatever host COSMOS is served from.
+    auth-router:
+      rule: PathPrefix(`/auth`)
+      service: service-auth
+      priority: 11
     # Route to the openc3 cmd/tlm api websockets
     api-cable-router:
       rule: PathPrefix(`/openc3-api/cable`)
@@ -137,6 +144,12 @@ http:
         passHostHeader: false
         servers:
           - url: "http://openc3-cosmos-script-runner-api:2902"
+    # The Keycloak identity provider
+    service-auth:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://openc3-keycloak:8080"
     # The Minio S3 file server
     service-minio:
       loadBalancer:

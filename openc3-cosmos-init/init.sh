@@ -107,6 +107,16 @@ if [ "${OPENC3_CLOUD}" == "local" ]; then
 fi
 
 ruby /openc3/bin/openc3cli removeenterprise || exit 1
+
+# Seed the built-in roles into every existing scope. ScopeModel#create seeds new
+# scopes, but an installation that predates role based access control has none,
+# and without them every permission check denies. Idempotent - existing roles,
+# including edited ones, are left untouched.
+# Does nothing unless the WarpLink rbac feature is installed.
+ruby -e "require 'openc3'; require 'openc3/models/scope_model'; \
+  begin; require 'openc3/models/role_model'; rescue LoadError; exit; end; \
+  OpenC3::ScopeModel.names.each { |s| created = OpenC3::RoleModel.seed(scope: s); \
+  puts \"Seeded roles for scope #{s}: #{created.join(', ')}\" unless created.empty? }" || exit 1
 ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-tool-base-*.gem || exit 1
 ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-iframe-*.gem || exit 1
 
@@ -137,6 +147,18 @@ if [ -z $OPENC3_NO_SCRIPTRUNNER ]; then
 fi
 if [ -z $OPENC3_NO_PACKETVIEWER ]; then
     ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-packetviewer-*.gem || exit 1
+fi
+# Only built when its WarpLink feature is installed (see docker-package-build.sh)
+if [ -z $OPENC3_NO_SIMCONTROL ] && ls /openc3/plugins/gems/openc3-cosmos-tool-simcontrol-*.gem >/dev/null 2>&1; then
+    ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-simcontrol-*.gem || exit 1
+fi
+# Only built when its WarpLink feature is installed (see docker-package-build.sh)
+if [ -z $OPENC3_NO_CALENDAR ] && ls /openc3/plugins/gems/openc3-cosmos-tool-calendar-*.gem >/dev/null 2>&1; then
+    ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-calendar-*.gem || exit 1
+fi
+# Only built when its WarpLink feature is installed (see docker-package-build.sh)
+if [ -z $OPENC3_NO_CFDPUPLINK ] && ls /openc3/plugins/gems/openc3-cosmos-tool-cfdpuplink-*.gem >/dev/null 2>&1; then
+    ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-cfdpuplink-*.gem || exit 1
 fi
 if [ -z $OPENC3_NO_TLMVIEWER ]; then
     ruby /openc3/bin/openc3cli load /openc3/plugins/gems/openc3-cosmos-tool-tlmviewer-*.gem || exit 1

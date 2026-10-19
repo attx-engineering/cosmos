@@ -18,6 +18,8 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 */
 
 import { createRouter, createWebHistory } from 'vue-router'
@@ -39,10 +41,13 @@ const getFirstTool = async () => {
   const { data } = await Api.get('/openc3-api/tools/all', {
     params: { scope: 'DEFAULT' },
   })
-  const [_, firstTool] = Object.entries(data).find(([name, tool]) => {
+  // A role may be permitted very few tools, or the list may come back empty if
+  // the API is unhappy. Destructuring a missing match would throw here and
+  // leave a blank page, so fall back to the default instead.
+  const match = Object.entries(data || {}).find(([name, tool]) => {
     return name !== 'Admin' && tool.shown
   })
-  return firstTool
+  return match ? match[1] : { url: DEFAULT_TOOL_URL }
 }
 
 const timeout = (ms) => {
@@ -68,6 +73,12 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  // The shared password form has no meaning once an identity provider is in
+  // use - send people to it instead of showing a form the backend will reject.
+  if (to.path === '/login' && typeof openc3_keycloak_url !== 'undefined' && openc3_keycloak_url) {
+    OpenC3Auth.login(location.origin)
+    return false
+  }
   if (ROOT_PATHS.includes(to.fullPath)) {
     const firstTool = await Promise.race([
       getFirstTool(),

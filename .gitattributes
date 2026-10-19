@@ -1,25 +1,33 @@
-# Declare all ruby files should always have LF line endings on checkout.
-*.rb text eol=lf
-# Declare all sh files should always have LF line endings on checkout.
-*.sh text eol=lf
-# Declare all c files should always have LF line endings on checkout.
-*.c text eol=lf
-# Declare all yaml files should always have LF line endings on checkout.
-*.yaml text eol=lf
-*.yml text eol=lf
-# Declare all js files should always have LF line endings on checkout.
-*.js text eol=lf
-# Declare all json files should always have LF line endings on checkout.
-*.json text eol=lf
-# Declare all md files should always have LF line endings on checkout.
-*.md text eol=lf
-# Declare all conf files should always have LF line endings on checkout.
-*.conf text eol=lf
-# Declare all redis acl files should always have LF line endings on checkout.
-*.acl text eol=lf
-# Declare files that will always have CRLF line endings on checkout.
+# Every text file checks out with LF on every platform, Windows included.
+#
+# This repo builds Linux containers from its own source tree, so a CRLF that
+# reaches a shell script, a Ruby or Python entrypoint (openc3/bin/openc3cli,
+# bin/rails), or a plugin .txt breaks the build or the plugin install. Git for
+# Windows defaults to core.autocrlf=true, which would rewrite every file it
+# considers text, so pin the line endings here rather than relying on each
+# developer's config.
+#
+# text=auto lets Git detect binaries by content and leave them untouched.
+* text=auto eol=lf
+
+# Windows-only files that must keep CRLF to run.
 *.bat text eol=crlf
 
-Dockerfile* text eol=lf
-Procfile* text eol=lf
-Rakefile* text eol=lf
+# Never apply any conversion to these, whatever the content heuristic decides.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.eot  binary
+*.ttf  binary
+*.woff binary
+*.woff2 binary
+*.gz   binary
+*.zip  binary
+*.bin  binary
+*.gem  binary
+*.pdf  binary
+*.vsix binary
+openc3-cosmos-init/mc binary
+openc3-ruby/anycable-go-linux-* binary

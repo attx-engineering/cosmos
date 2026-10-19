@@ -60,6 +60,15 @@ http:
         replacement: "$1.html"
   routers:
     # Note: Priorities control router check order with highest priority evaluated first
+    # Route to Keycloak, same-origin so the browser needs no cross-origin requests
+    auth-router:
+      rule: PathPrefix(`/auth`)
+      service: service-auth
+      priority: 11
+      tls:
+        certResolver: myresolver
+        domains:
+          - main: "mydomain.com"
     # Route to the openc3 cmd/tlm api websockets
     api-cable-router:
       rule: PathPrefix(`/openc3-api/cable`)
@@ -173,6 +182,12 @@ http:
         domains:
           - main: "mydomain.com"
   services:
+    # The Keycloak identity provider
+    service-auth:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://openc3-keycloak:8080"
     # The OpenC3 cmd/tlm api cable service
     service-api-cable:
       loadBalancer:

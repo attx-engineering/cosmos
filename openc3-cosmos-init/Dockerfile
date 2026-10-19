@@ -18,6 +18,7 @@ COPY ./plugins/*.yaml ./
 COPY ./plugins/packages/openc3-tool-base/*.json packages/openc3-tool-base/
 COPY ./plugins/packages/openc3-cosmos-tool-admin/*.json packages/openc3-cosmos-tool-admin/
 COPY ./plugins/packages/openc3-cosmos-tool-bucketexplorer/*.json packages/openc3-cosmos-tool-bucketexplorer/
+COPY ./plugins/packages/openc3-cosmos-tool-cfdpuplink/*.json packages/openc3-cosmos-tool-cfdpuplink/
 COPY ./plugins/packages/openc3-cosmos-tool-cmdsender/*.json packages/openc3-cosmos-tool-cmdsender/
 COPY ./plugins/packages/openc3-cosmos-tool-cmdtlmserver/*.json packages/openc3-cosmos-tool-cmdtlmserver/
 COPY ./plugins/packages/openc3-cosmos-tool-dataextractor/*.json packages/openc3-cosmos-tool-dataextractor/
@@ -27,6 +28,8 @@ COPY ./plugins/packages/openc3-cosmos-tool-handbooks/*.json packages/openc3-cosm
 COPY ./plugins/packages/openc3-cosmos-tool-limitsmonitor/*.json packages/openc3-cosmos-tool-limitsmonitor/
 COPY ./plugins/packages/openc3-cosmos-tool-packetviewer/*.json packages/openc3-cosmos-tool-packetviewer/
 COPY ./plugins/packages/openc3-cosmos-tool-scriptrunner/*.json packages/openc3-cosmos-tool-scriptrunner/
+COPY ./plugins/packages/openc3-cosmos-tool-simcontrol/*.json packages/openc3-cosmos-tool-simcontrol/
+COPY ./plugins/packages/openc3-cosmos-tool-calendar/*.json packages/openc3-cosmos-tool-calendar/
 COPY ./plugins/packages/openc3-cosmos-tool-tablemanager/*.json packages/openc3-cosmos-tool-tablemanager/
 COPY ./plugins/packages/openc3-cosmos-tool-tlmgrapher/*.json packages/openc3-cosmos-tool-tlmgrapher/
 COPY ./plugins/packages/openc3-cosmos-tool-tlmviewer/*.json packages/openc3-cosmos-tool-tlmviewer/
@@ -95,6 +98,18 @@ RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-limitsmonito
 # Build packetviewer tool
 COPY ./plugins/packages/openc3-cosmos-tool-packetviewer/ packages/openc3-cosmos-tool-packetviewer/
 RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-packetviewer"]
+
+# Build simcontrol tool
+COPY ./plugins/packages/openc3-cosmos-tool-simcontrol/ packages/openc3-cosmos-tool-simcontrol/
+RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-simcontrol"]
+
+# Build calendar tool
+COPY ./plugins/packages/openc3-cosmos-tool-calendar/ packages/openc3-cosmos-tool-calendar/
+RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-calendar"]
+
+# Build cfdpuplink tool
+COPY ./plugins/packages/openc3-cosmos-tool-cfdpuplink/ packages/openc3-cosmos-tool-cfdpuplink/
+RUN ["/openc3/plugins/docker-package-build.sh", "openc3-cosmos-tool-cfdpuplink"]
 
 # Build tlmgrapher tool
 FROM openc3-frontend-tmp AS openc3-tmp4

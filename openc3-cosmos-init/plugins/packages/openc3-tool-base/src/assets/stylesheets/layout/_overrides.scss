@@ -4,6 +4,42 @@
 // See vuetify.js and https://www.astrouxds.com/design-tokens/system/ for the colors
 // and note the variations are: base, lighten[1-5], and darken[1-4]
 
+// WarpWare brand palette. Astro declares these tokens under :where(:root),
+// which has zero specificity, so this plain :root block wins without
+// !important. Values are taken from warpware.co; the three marked "derived"
+// have no direct equivalent on the site and are interpolated toward the
+// brand purple to preserve the state hierarchy Astro expects.
+:root {
+  // base — page background and its states
+  --color-background-base-default: #0d0d0d;
+  --color-background-base-header: #141414;
+  --color-background-base-hover: #161616;
+  --color-background-base-selected: #2b1b3d; // derived
+  // surface — cards, panels, nav drawer, app bar
+  --color-background-surface-default: #161616;
+  --color-background-surface-header: #141414;
+  --color-background-surface-hover: #222222;
+  --color-background-surface-selected: #2b1b3d; // derived
+  // interactive — buttons, links, focus
+  --color-background-interactive-default: #814ac8;
+  --color-background-interactive-hover: #df7afe;
+  --color-background-interactive-muted: #5a3489; // derived
+  // buttons — Astro keeps a separate token family from the backgrounds above,
+  // which is why primary buttons stayed blue after the first pass
+  --button-color-background-primary-default: #814ac8;
+  --button-color-background-primary-hover: #df7afe;
+  --button-color-border-primary-default: #814ac8;
+  --button-color-border-primary-hover: #df7afe;
+  // white on #814ac8 is 5.60:1 (AA); Astro's dark inverse would be 3.50:1
+  --color-text-inverse: #ffffff;
+  // lavender on #0d0d0d is 7.73:1; the purple would be 3.47:1 (fails AA)
+  --color-text-interactive-default: #df7afe;
+  --color-border-interactive-muted: #5a3489; // derived
+  // global status bar — the footer and the app-bar clock read these
+  --gsb-color-background: #141414;
+  --clock-datetime-color-background: #0d0d0d;
+}
+
 .openc3-green {
   color: #56f000 !important;
 }

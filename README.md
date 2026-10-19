@@ -1,98 +1,465 @@
-## Welcome to OpenC3 COSMOS
+# WarpLink
 
-> "Open Source, Open Architecture - Command, Control and Communication"
+WarpLink is [OpenC3 COSMOS](https://docs.openc3.com/docs) configured as the
+ground system for WarpOS flight software. It provides telemetry display and
+graphing, command sending, scripting, and logging for one or more WarpOS build
+targets over UDP, serial/USB, or TCP/IP.
 
-[![OpenC3 5 Playwright Tests](https://github.com/OpenC3/cosmos/actions/workflows/playwright.yml/badge.svg)](https://github.com/OpenC3/cosmos/actions/workflows/playwright.yml)<br/>
-[![OpenC3 5 Ruby Unit Tests](https://github.com/OpenC3/cosmos/actions/workflows/ruby_unit_tests.yml/badge.svg)](https://github.com/OpenC3/cosmos/actions/workflows/ruby_unit_tests.yml)<br/>
-[![OpenC3 5 Python Unit Tests](https://github.com/OpenC3/cosmos/actions/workflows/python_unit_tests.yml/badge.svg)](https://github.com/OpenC3/cosmos/actions/workflows/python_unit_tests.yml)<br/>
-[![OpenC3 5 API Tests](https://github.com/OpenC3/cosmos/actions/workflows/api_tests.yml/badge.svg)](https://github.com/OpenC3/cosmos/actions/workflows/api_tests.yml)<br/>
-[![Codecov](https://codecov.io/gh/OpenC3/cosmos/branch/main/graph/badge.svg?token=arrpMGT2RR)](https://codecov.io/gh/OpenC3/cosmos)
+## Repository layout
 
-[Documentation](https://openc3.com)
+| Path | What it is |
+| --- | --- |
+| `CosmosUpdateCmdTlm.py` | Generates COSMOS command/telemetry definitions from a WarpOS `cmd_tlm.json` |
+| `templates/` | CCSDS header templates (`command.txt`, `telemetry.txt`) and bare CFDP PDU templates (`cfdp_command.txt`, `cfdp_telemetry.txt`) the generator fills in |
+| `openc3-cosmos-warplink/` | The COSMOS plugin: `plugin.txt`, per-target `cmd_tlm/`, and the built `.gem` files |
+| `openc3-cosmos-warplink/targets/common/` | `target.txt` and `lib/` (CFDP-aware CRC, `check_pattern.py`, half-float conversion) copied into every generated target |
+| `openc3-keycloak/` | Keycloak realm and access control setup |
+| `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-simcontrol/` | The Sim Control tool |
+| `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-calendar/` | The Calendar tool |
+| `openc3-cosmos-warplink/microservices/CFDP_SERVICE/` | CFDP file transfer microservice |
+| `openc3-cosmos-init/plugins/packages/openc3-cosmos-tool-cfdpuplink/` | The CFDP Uplink tool |
+| `cfdp/` | Host directory for CFDP transfers (ships empty; contents git-ignored, bind mounted into the containers) |
+| `compose.yaml` | Container configuration, including the telemetry ports published into COSMOS |
+| `bridge.txt` | Windows serial/USB bridge configuration, run with `openc3cli bridge bridge.txt` |
+| `openc3.sh` | Container control and CLI wrapper |
 
-OpenC3 COSMOS provides all the functionality needed to send commands to and receive data from one or more embedded systems referred to as "targets". Out of the box functionality includes: Telemetry Display, Telemetry Graphing, Operational and Test Scripting, Command Sending, Logging, Log File Playback, and more.
+Everything else is upstream OpenC3 COSMOS.
 
-So what can you use this for? We use it to test about everything we create and OpenC3 COSMOS is great for automating embedded systems testing or operation. It can provide a fully featured user interface to any piece of hardware that provides an electronic way of communicating with it (TCP/IP, UDP, Serial, etc). Potential uses range from testing embedded systems, to home automation, to verifying cell phones, to helping you make that next great thing that changes the world! The sky is the limit...
+This repository is the open source half of WarpLink: OpenC3 COSMOS with the
+changes WarpLink makes to COSMOS's own files. The WarpLink code itself — the
+WarpOS plugin and generator, and the Sim Control, Calendar, CFDP and access
+control features — is installed on top by the WarpLink installer. The sections
+below about a feature apply once that feature is installed; until then its hooks
+here stay dormant and COSMOS behaves as upstream.
 
-After configuring OpenC3 COSMOS to talk to your hardware, you can immediately use the following tools:
+## Setup
 
-1. **Command and Telemetry Server**
+1. Clone this repository, then install WarpLink into it by running the
+   WarpLink installer you were sent: `./install.sh <this-directory>`.
 
-   - This provides status of all the target connections within the OpenC3 COSMOS system. It allows interfaces to be connected and disconnected and allows raw packet data to be viewed.
+2. **Generate the cmd/tlm files.** From within WarpOS, go to the `build`
+   directory and run `cmake ..`
 
-1. **Limits Monitor**
+   1. This creates `cmd_tlm.json` in the build directory.
+   2. Copy that file into the base directory of WarpLink.
+   3. From the base directory, run `python3 CosmosUpdateCmdTlm.py`
 
-   - The Limits Monitor tool provides an overview of all telemetry points in the system that are currently out of limits. It also maintains a log of limits changes and continues to display items that have gone out of limits even after they have been restored to green status.
+   The generator reads the `cosmos_target` field in the JSON and writes
+   everything that target needs:
 
-1. **Command Sender**
+   - `openc3-cosmos-warplink/targets/<TARGET>/cmd_tlm/cmd.txt` and `tlm.txt`
+   - `target.txt` and `lib/` copied from `targets/common/`
+   - a `TARGET` + `INTERFACE` block in `openc3-cosmos-warplink/plugin.txt`, on
+     the next free pair of UDP ports and pointed at `host.docker.internal`
+     (override with `--plugin-host`), if that target is not declared yet
 
-   - Command Sender allows you to manually send one-off commands with convenient drop downs and descriptions of each command and command parameter.
+   Each WarpOS build gets its own COSMOS target, so several builds can coexist
+   in one instance. Blocks that already exist in `plugin.txt` are never
+   rewritten — ports and hosts you tune there survive regeneration. Run
+   `python3 CosmosUpdateCmdTlm.py --help` for the available paths and flags.
 
-1. **Script Runner**
+   The generator does not edit `compose.yaml`. For a new target, publish its
+   read port there too — see [Targets and ports](#targets-and-ports).
 
-   - Script Runner allows for running OpenC3 COSMOS test procedures or any other Ruby code from a graphical environment that highlights each line as it executes. At any time during execution, the script can be paused or stopped. If a telemetry check fails or any other exception occurs, the script is immediately stopped and the user notified.
+3. **Build and start the containers.**
 
-   - Script Runner also allows you to break your operational or test procedures down into discrete test cases that each complete with either SUCCESS or FAILURE. After running, a script report is automatically created for you. Convenient features such as the ability to loop testing help get the kinks out of your system before formal runs.
+   ```bash
+   ./openc3.sh start   # builds the containers from this source, then runs them
+   ./openc3.sh run     # afterwards: runs the already-built containers
+   ```
 
-1. **Packet Viewer**
+   WarpLink changes the COSMOS containers themselves, so they are built from
+   this repository rather than pulled as upstream OpenC3 images. Run
+   `./openc3.sh start` again after updating to a new WarpLink release.
 
-   - Packet Viewer provides a simple key-value list of each telemetry item in the system, giving you full view of the most recent real-time value of any telemetry point.
+4. **Build the plugin** that ingests the commands and telemetry:
 
-1. **Telemetry Viewer**
+   ```bash
+   cd openc3-cosmos-warplink/ && ../openc3.sh cli rake build VERSION=1.0.0
+   ```
 
-   - Create custom organized telemetry screens using a wide variety of available telemetry widgets for display. Provide exactly the views that your users need to see for each subsystem in your system.
+   1. Increment the version (MAJOR.MINOR.PATCH) on every build — COSMOS keys
+      plugins by version, so reinstalling requires a new number.
+   2. This creates `openc3-cosmos-warplink-#.#.#.gem` in that directory, used
+      in the next steps.
 
-1. **Telemetry Grapher**
+5. In a web browser, open <http://localhost:2900/> — this is the WarpLink GUI.
 
-   - Real-time and offline line graphing of telemetry points. Multiple telemetry points per graphs and multiple graphs per window allow you to efficiently organize your data. Great for graphing temperatures and voltages both in real time and post-test.
+6. **Install the plugin.** From the Admin Console, select "Install from file"
+   and choose the `.gem` you just built. The install dialog lists every
+   `VARIABLE` in `plugin.txt` (each target's enable flag, host, and ports), so
+   connection settings can be changed here without editing the file.
 
-1. **Data Extractor**
+7. Depending on your setup, follow the UDP, Linux Serial/USB, or Windows
+   Serial/USB instructions below for connecting to the telemetry stream.
 
-   - Used for offline analysis of command and telemetry data. Extracts a given list of items into a CSV file for further analysis in other tools such as Excel or Matlab.
+### Rebuilding after a change
 
-1. **Data Viewer**
+Any change to `plugin.txt`, `cmd.txt`, `tlm.txt`, or the target `lib/` needs a
+new gem: rebuild with an incremented `VERSION` and reinstall it through the
+Admin Console. Regenerating from a new `cmd_tlm.json` (step 2) counts.
 
-   - Used to view packet data or individual item data in both the past and in real time. Great solution for non-text based data like memory dumps.
+Changing a **built-in tool** (such as Sim Control, Calendar, or the base UI)
+needs `./openc3.sh start`, which rebuilds the containers. Each tool's version
+ends in a checksum of its built files (for example
+`openc3-cosmos-tool-calendar-6.10.6.3984735217`), so a changed tool upgrades
+automatically on that start and unchanged tools are left alone. Then hard
+refresh the browser (Ctrl+Shift+R) — asset filenames are hashed, so the old
+ones stop existing and a cached page points at files that are gone.
 
-1. **Bucket Explorer**
+If a tool still looks stale, force every tool to reinstall once:
 
-   - Used to view configuration and log data which is stored in either MinIO (local server) or cloud based object storage (AWS S3, Google Cloud Storage).
+```bash
+docker compose -f compose.yaml run --rm --no-deps -e OPENC3_FORCE_INSTALL=1 openc3-cosmos-init
+```
 
-1. **Table Manager**
+A change to `compose.yaml` needs `./openc3.sh run` to recreate the affected
+containers; it does not need a new gem.
 
-   - Binary file editor used to create and edit files such as flight tables.
+## Access from other computers
 
-1. **Handbooks**
+By default WarpLink only answers on this machine. To let others on the network
+use it, run the `remote-access.sh` script that came with the installer:
 
-   - Formats the command and telemetry database for easy viewing.
+```bash
+./remote-access.sh <this-directory>             # this machine's IP and hostname
+./remote-access.sh --host gs1.example.com <dir>  # or name the address(es)
+```
 
-1. **Documentation**
+It serves WarpLink over HTTPS at `https://<host>:2943` and prints the
+addresses. The certificate is self-signed unless you pass `--cert`/`--key`, so
+browsers warn on the first visit. If nothing can connect, open TCP port 2943 in
+the firewall. `--disable` goes back to local-only.
 
-   - All the COSMOS documentation is bundled as an application for easy viewing, even when offline.
+## Targets and ports
 
-OpenC3 COSMOS was originally created by Ryan Melton (ryanmelt) and Jason Thomas (jmthomas) and is built and maintained by OpenC3, Inc.
+Each target needs its own UDP ports. COSMOS scopes packet identification to the
+targets mapped to the receiving interface, and the WarpOS builds reuse the same
+STREAM_IDs, so two targets sharing an interface — or two interfaces sharing a
+read port — cannot be told apart. `CosmosUpdateCmdTlm.py` allocates above the
+highest port already declared to keep new targets clear of existing ones.
 
-## Getting Started
+Defaults in `openc3-cosmos-warplink/plugin.txt`:
 
-1.  See the [Installation Guide](https://docs.openc3.com/docs/getting-started/installation) for detailed instructions.
+| Target | Enabled | Host | Write (command) | Read (telemetry) |
+| --- | --- | --- | --- | --- |
+| `BF2_FLIGHT_BOARD` | yes | `host.docker.internal` | 5006 | 5005 |
+| `SIM` | no | `host.docker.internal` | 5009 | — (send only) |
 
-1.  Follow the [Getting Started](https://docs.openc3.com/docs/getting-started/gettingstarted) to start developing your configuration.
+Targets generated from other WarpOS builds are added on the next free pair of
+ports above these (5010/5011, then 5012/5013, and so on).
 
-## Contributing
+Set `<target>_enable` to `true` or `false`, in the file or in the install
+dialog, to choose which targets load.
 
-We encourage you to contribute to OpenC3 COSMOS!
+**Publishing ports.** COSMOS receives telemetry inside the `openc3-operator`
+container, so every enabled target's read port must be listed under that
+service's `ports` in `compose.yaml`. Only `BF2_FLIGHT_BOARD`'s 5005 is there by
+default; a generated target on 5010 needs `- "0.0.0.0:5010:5010/udp"`. Publish only read
+ports. Write ports are outbound from the container and need no mapping, and
+publishing one makes any host process that has to bind that port (a splitter
+or a simulator) fail with `EADDRINUSE`.
 
-Contributing is easy.
+## Windows Serial/USB Command/Telemetry Interface
 
-1. Fork the project
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+To run WarpLink over serial/USB on Windows, a "Bridge" is needed to connect the
+data arriving on the host machine's COM port to the Docker instance running
+under the hood.
 
-Most importantly:
+Downloads needed:
 
-FOR ALL CONTRIBUTIONS TO THE OPENC3 COSMOS PROJECT, OPENC3, INC. MAINTAINS ALL RIGHTS TO ALL CODE CONTRIBUTED TO THE OPENC3 PROJECT INCLUDING THE RIGHT TO LICENSE IT UNDER OTHER TERMS. YOU ARE AGREEING TO OUR CONTRIBUTOR LICENSE AGREEMENT WHEN SUBMITTING CODE TO THIS PROJECT: See [CONTRIBUTING.txt](CONTRIBUTING.txt)
+- Download Ruby (v3.2+) from the official Ruby website.
+- From PowerShell, run `gem install openc3`
+  - Ensure the Ruby gem executable path is in your `PATH` environment variable.
+
+Configuration:
+
+- `bridge.txt` in the base directory of WarpLink configures the bridge. Check
+  its variables against your hardware:
+  - UART configuration — baud rate (default 230400), parity, data bits, flow
+    control, etc.
+  - COM port name (default `COM4`) — the port you read and write depends on
+    what your computer assigned the USB connection; see Device Manager
+  - Router port (default 5000) — the TCP port the bridge serves serial traffic
+    on for COSMOS to connect to
+- In `openc3-cosmos-warplink/plugin.txt`, each target block has a commented
+  `INTERFACE` line for a TCP connection to `host.docker.internal`. Uncomment
+  that line for your target and comment out its other `INTERFACE` lines (serial
+  and UDP). For `BF2_FLIGHT_BOARD` it already connects on port 5000 for both
+  directions; if you change `router_port` in `bridge.txt`, change both ports on
+  that line to match.
+  - Changing `plugin.txt` means rebuilding the `.gem` and reinstalling it
+    through the UI, per the instructions above.
+
+Once the new gem is uploaded and the routing device is plugged in, run the
+bridge:
+
+- From PowerShell: `openc3cli bridge bridge.txt`
+- Expect a couple of outputs in the terminal. You will know it succeeded on
+  `SERIAL_ROUTER: Tcpip server accepted from host.docker.internal(...)`
+
+## Linux Serial/USB Connection
+
+To connect to a serial/USB device on Linux, configure `plugin.txt`. Each target
+block has a commented line for `openc3/interfaces/serial_interface.py`. Uncomment
+it and comment out that target's other `INTERFACE` lines. Its options are, in
+order:
+
+- Write port
+- Read port
+- Baud rate
+- Parity
+- Stop bits
+- Write timeout
+- Read timeout
+
+Ensure the serial configuration matches your hardware, and that the read/write
+ports (default `/dev/ttyUSB0`) match the USB/serial device you have plugged in.
+
+- Changing `plugin.txt` means rebuilding the `.gem` and reinstalling it through
+  the UI, per the instructions above.
+
+## Using a Raspberry Pi for command/telemetry
+
+The simplest way to receive telemetry is over WiFi using a RasPi. You can
+either:
+
+1. Use the Raspberry Pi as a passthrough for telemetry.
+   1. Connect the telemetry and command UARTs from the hardware to the Pi.
+   2. Copy `cmd-tlm-interface.py` from the pi-tools repository
+      (`attx-engineering/pi-tools`) to the Pi.
+   3. Run it with the flags for your setup (see step 9 below). Telemetry
+      should start passing through.
+2. Use the Raspberry Pi as the hardware platform, configured to take telemetry
+   and send it over a socket.
+
+**Notes:**
+
+1. The Pi must send to the read port and listen on the write port of the target
+   it is feeding (5005/5006 for `BF2_FLIGHT_BOARD`; see
+   [Targets and ports](#targets-and-ports)).
+2. That target's `<target>_host` variable must be the IP of the Pi. Set it in
+   `openc3-cosmos-warplink/plugin.txt`, or in the plugin install dialog, which
+   needs no rebuild.
+
+### RasPi configuration for Serial-UDP
+
+> **Note:** the Raspberry Pi option is only used if you are routing commands and
+> telemetry through a Pi so your ground station can send and receive over UDP.
+
+If the RasPi hasn't been flashed yet:
+
+1. Download the RPi Imager.
+2. Plug the SD card into your computer.
+3. Configure:
+   1. Operating System: RPi OS 64-bit
+   2. Storage: internal SD card reader (or whatever your SD card interface is)
+   3. Settings (gear icon):
+      1. Set the hostname to your liking
+      2. Check "enable SSH" and "Use password authentication"
+      3. Choose a username
+      4. Configure wireless LAN for your network, and check the password
+   4. Click "Write", then "Yes"
+4. Once the write completes and the dialog says it is safe, unplug the SD card
+   and transfer it to the RasPi.
+5. Plug in the USB-C power supply.
+6. Wait for the onboard LED to blink green.
+7. From a separate computer on the same network: `ssh <hostname>.local`
+   1. If the connection does not work, try pinging the Pi.
+   2. On first boot the RasPi may need to connect to WiFi, so allow ~10 minutes
+      before troubleshooting.
+8. Transfer `cmd-tlm-interface.py` to the RasPi (VSCode remote-ssh extension,
+   SFTP, or another method).
+9. On the RasPi CLI, run it with the flags for your hardware and network:
+
+   ```bash
+   sudo python3 cmd-tlm-interface.py --udp_addr <WarpLink host IP> \
+       --telemetry_serial <USB serial> --command_serial <USB serial>
+   ```
+
+   | Flag | Meaning | Default |
+   | --- | --- | --- |
+   | `--udp_addr` | IP of the machine running WarpLink | — |
+   | `--udp_port` | Target read port telemetry is sent to | 5005 |
+   | `--listen_port` | Target write port commands arrive on | 5006 |
+   | `--telemetry_serial` | USB serial number of the telemetry UART adapter | `BG00WUKH` |
+   | `--command_serial` | USB serial number of the command UART adapter | `BG01BA7H` |
+   | `--baud` | UART baud rate | 115200 |
+   | `--telemetry_baud` | Telemetry UART baud rate, if different from `--baud` | same as `--baud` |
+
+   `find-usb-devices.py` in pi-tools can help identify the adapters' serial
+   numbers. Once it is running, telemetry should appear on the CmdTlmServer
+   tab in WarpLink.
+
+## Access control
+
+By default WarpLink uses a single shared password and everyone who has it can do
+everything. Role based access control replaces that with per-user logins backed
+by [Keycloak](openc3-keycloak/README.md), and is **off unless
+`OPENC3_KEYCLOAK_URL` is set** in `.env`.
+
+Turning it on, with the rbac feature installed:
+
+1. Uncomment `COMPOSE_PROFILES=rbac` in `.env` and run `./openc3.sh run`.
+   This starts Keycloak; without that line it is never started or downloaded.
+2. Create your users in Keycloak and give at least one the `admin` role.
+3. Uncomment the three `OPENC3_KEYCLOAK_*` lines in `.env` and run
+   `./openc3.sh run` again.
+
+| Role | Grants |
+| --- | --- |
+| `admin` | Everything, including simulation control and role administration |
+| `operator` | Commands and scripts on every target except `SIM`; no Sim Control tool |
+| `viewer` | Read-only telemetry and scripts; no `SIM`, no Sim Control tool |
+
+Custom roles pick their own permissions, which targets they apply to, and which
+tools appear in the nav. Keycloak holds the role *names* and who has them;
+COSMOS holds what each role *grants*, so permissions can be changed without
+touching Keycloak.
+
+Enforcement is server side — hiding a tool is only cosmetic, and every request
+is checked independently. See [openc3-keycloak/README.md](openc3-keycloak/README.md)
+for adding users, custom roles, and hosting Keycloak on another machine.
+
+> **Not yet enforced:** scheduled calendar activities and scripts run under the
+> internal service account, so they execute with full rights regardless of who
+> created them. Until that is closed, treat the ability to schedule an activity
+> or run a script as equivalent to full command authority.
+
+## Simulation control
+
+The `SIM` target is not a WarpOS build. It is a send-only JSON channel on its
+own port (5009 by default) so it never mixes with flight software command
+traffic. It is disabled by default; set `sim_enable` to `true` to load it. Its
+one command, `SET_VALUE`, sends raw JSON with no CCSDS header and no CRC:
+
+```json
+{ "address": ".exc.spacecraft.params.mass", "value": 5 }
+```
+
+The Sim Control tool in the sidebar is the front end for it. To autocomplete
+addresses, load the `graph_tree.json` the simulation writes on its first step
+into the tool. The tool keeps the tree in your browser, so loading a newer dump
+needs no plugin rebuild.
+
+The port is fire-and-forget: "Sent" means the JSON left WarpLink, not that the
+simulation accepted it. A rejected address or value is logged on the
+simulation's side only.
+
+## Calendar and scheduling
+
+The Calendar tool schedules commands and scripts to run at a future date and
+time. Work is organised into **timelines**, each of which gets its own scheduler
+process; an activity on a timeline is one of:
+
+| Kind | What happens at its start time |
+| --- | --- |
+| Command | The command is sent |
+| Script | The script is launched in Script Runner and tracked to completion |
+| Reserve | Nothing runs. It occupies the slot for reference — this is also how pass windows are represented |
+
+Activities can repeat on a schedule, and each one records what actually
+happened, so a failed command or a script that crashed is visible on the
+calendar rather than silently missed. A timeline can be paused, which leaves its
+activities in place but stops them executing.
+
+The calendar has day, week, month, gantt and list views. The gantt view zooms
+with the scroll wheel and pans by dragging, which is what makes a ten minute
+pass usable inside a week-long window.
+
+### Satellite passes
+
+Pass windows are `reserve` activities on a dedicated timeline, so they block out
+visibility on the calendar and commands can be scheduled inside them. A script
+publishes them:
+
+```python
+create_pass_activities([
+    {"start": aos, "stop": los, "satellite": "SAT1", "ground_station": "GS1"},
+])
+```
+
+`start` and `stop` accept datetimes, ISO 8601 strings, or epoch seconds. Re-run
+it against updated propagation and it replaces the passes in that range rather
+than duplicating them — commands you scheduled *inside* a window are left alone,
+because those are yours and not the propagator's. Passes already underway are
+skipped and reported rather than failing the whole batch. There is a Ruby
+equivalent with the same name.
+
+## CFDP file transfer
+
+Files move between WarpLink and WarpOS as unacknowledged-mode CFDP transfers,
+carried as bare CFDP PDUs (no CCSDS wrapper) on the target's normal interface.
+
+- **Definitions.** Packets marked `"packing_scheme": "cfdp"` in `cmd_tlm.json`
+  are generated from `templates/cfdp_telemetry.txt` (always named
+  `CFDP_PACKET`) and `templates/cfdp_command.txt`
+  (`STORAGE_MANAGER_CFDP`). Every interface uses `check_pattern.py 512`, which
+  delineates both CCSDS packets and CFDP PDUs, and `cfdp_aware_crc_protocol.py`,
+  which skips the CRC fill on the bare PDU commands.
+- **Service.** `CFDP_SERVICE` serves the one target named by the `cfdp_target`
+  plugin variable (default `BF2_FLIGHT_BOARD`). Set `cfdp_enable` to `false` to
+  install without it.
+- **Receiving.** Files are staged in `cfdp/incoming/in_progress/` and moved to
+  `cfdp/incoming/complete/` only once every byte has arrived and the checksum
+  matches; anything else lands in `cfdp/incoming/failed/`. Partial files have
+  their missing bytes zero-filled and a `<name>.cfdp-status.json` beside them
+  recording bytes received, missing ranges, and why the transfer is not
+  complete.
+- **Sending and requesting.** The CFDP Uplink tool in the sidebar uploads a
+  file and queues it for `CFDP_SERVICE` to send, sends
+  `STORAGE_MANAGER_FILE_GET` to request a file from WarpOS, and lists and
+  downloads received files — including partial ones, each labelled Complete,
+  Receiving, Incomplete, or Failed. Uploading requires the admin role.
+
+The `cfdp/` directory ships with WarpLink, kept by an empty `cfdp/.gitkeep`.
+Do not delete it: if it is missing when the containers start, Docker creates it
+owned by root and the service cannot write to it. Recreate it with `mkdir cfdp`
+as your normal user.
+
+## Troubleshooting
+
+Most of the time, disconnecting and reconnecting (via the "Action" column on the
+CmdTlmServer tab) or rebuilding and reinstalling the plugin is enough.
+
+1. If no data appears in the GUI and there are no recurring messages on the
+   CmdTlmServer page:
+   1. Check that the Raspberry Pi is actually sending UDP data — verify the IP
+      address, baud rate, and serial port on the Pi.
+   2. Ensure the IP addresses and ports are correct in
+      `openc3-cosmos-warplink/plugin.txt`, or in the plugin install dialog.
+   3. Check that the target's `<target>_enable` variable is `true`.
+   4. Check that the target's read port is published in `compose.yaml` — see
+      [Targets and ports](#targets-and-ports).
+2. If many "unknown" packets are arriving, the definitions no longer match the
+   flight software. Reload `cmd_tlm.json` from WarpOS, copy it into WarpLink,
+   rerun `CosmosUpdateCmdTlm.py`, and rebuild and reinstall the `.gem`.
+3. If a target loads but never identifies packets while another target works,
+   check that the two are not sharing a read port — see
+   [Targets and ports](#targets-and-ports).
+4. If a host-side splitter or simulator fails to start with `EADDRINUSE`, a
+   write port is published in `compose.yaml`. Remove that mapping and run
+   `./openc3.sh run`.
+5. If a change to a built-in tool does not appear, hard refresh the browser,
+   then see [Rebuilding after a change](#rebuilding-after-a-change).
+6. With access control enabled, "invalid username or password" most often means
+   the user has no password credential rather than a wrong one — creating a user
+   in Keycloak does not create a credential. See
+   [openc3-keycloak/README.md](openc3-keycloak/README.md).
+6. If a scheduled activity never runs, check the timeline is not paused (the
+   pause control is beside its name in the calendar sidebar) and that the
+   activity's own history does not show it was missed while the system was down.
+
+## Upstream
+
+WarpLink is built on OpenC3 COSMOS, originally created by Ryan Melton
+(ryanmelt) and Jason Thomas (jmthomas) and maintained by OpenC3, Inc. Upstream
+documentation is at <https://docs.openc3.com/docs>; the tool reference there
+(Command Sender, Telemetry Viewer, Script Runner, Data Extractor, and the rest)
+applies unchanged.
 
 ## License
 
-OpenC3 COSMOS is released under the AGPL v3 with a few addendums. See [LICENSE.txt](LICENSE.txt)
+OpenC3 COSMOS is released under the AGPL v3 with a few addendums. See
+[LICENSE.txt](LICENSE.txt). Contributions are governed by
+[CONTRIBUTING.txt](CONTRIBUTING.txt).

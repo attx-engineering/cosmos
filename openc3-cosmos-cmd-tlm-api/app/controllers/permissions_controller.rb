@@ -12,17 +12,68 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-
+#
 # Modified by OpenC3, Inc.
 # All changes Copyright 2022, OpenC3, Inc.
-# All Rights Reserved
+# All Rights reserved
 #
-# This file may also be used under the terms of a commercial license 
+# This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
+
 
 begin
   require 'openc3-enterprise/controllers/permissions_controller'
 rescue LoadError
-  class PermissionsController < ModelController
+  begin
+    require 'openc3/utilities/rbac' # WarpLink rbac feature
+  rescue LoadError
+  end
+  if defined?(OpenC3::Rbac)
+    # Reports what the calling user may do, so the frontend can hide controls it
+    # would only be refused for using.
+    #
+    # This is for rendering only. It is never the enforcement point - every
+    # request is independently checked by authorize(), so a client that ignores
+    # this endpoint entirely gains nothing.
+    class PermissionsController < ApplicationController
+      def index
+        # Any authenticated user may ask what they themselves can do
+        return unless authorization('system')
+
+        unless OpenC3::Rbac.enabled?
+          # Without an identity provider there are no roles and the shared
+          # password grants everything. Say so plainly rather than implying a
+          # restriction that isn't being enforced.
+          render json: {
+            'rbac' => false,
+            'username' => username(),
+            'roles' => [],
+            'permissions' => OpenC3::RoleModel::PERMISSIONS,
+            'targets' => OpenC3::RoleModel::ALL,
+            'excluded_targets' => [],
+            'tools' => OpenC3::RoleModel::ALL,
+            'excluded_tools' => [],
+          }
+          return
+        end
+
+        result = OpenC3::Rbac.effective_permissions(
+          token: request.headers['HTTP_AUTHORIZATION'],
+          scope: params[:scope],
+        )
+        render json: result.merge('rbac' => true)
+      rescue OpenC3::AuthError => e
+        render json: { status: 'error', message: e.message }, status: 401
+      rescue StandardError => e
+        log_error(e)
+        render json: { status: 'error', message: e.message }, status: 500
+      end
+    end
+  else
+    # Upstream COSMOS Core: no roles to report
+    class PermissionsController < ModelController
+    end
   end
 end

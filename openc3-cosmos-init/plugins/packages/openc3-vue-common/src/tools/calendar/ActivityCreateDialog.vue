@@ -18,6 +18,8 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 -->
 
 <template>
@@ -330,7 +332,9 @@ export default {
     modelValue: Boolean,
     timelines: {
       type: Array,
-      required: true,
+      // Editing an existing activity doesn't need the list - the activity
+      // already knows its timeline - so this is optional rather than required.
+      default: () => [],
     },
     activity: {
       type: Object,

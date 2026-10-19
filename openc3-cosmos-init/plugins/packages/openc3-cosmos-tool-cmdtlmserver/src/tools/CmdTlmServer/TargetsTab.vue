@@ -18,6 +18,8 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 -->
 
 <template>
@@ -130,22 +132,14 @@
         </v-btn>
       </template>
     </v-data-table>
-    <upgrade-to-enterprise-dialog
-      v-model="showUpgradeToEnterpriseDialog"
-      reason="Command Authority is Enterprise Only"
-    />
   </v-card>
 </template>
 
 <script>
 import { Api, Cable } from '@openc3/js-common/services'
-import { UpgradeToEnterpriseDialog } from '@openc3/vue-common/components'
 import Updater from './Updater'
 
 export default {
-  components: {
-    UpgradeToEnterpriseDialog,
-  },
   mixins: [Updater],
   props: {
     tabId: { type: Number, default: null },
@@ -169,7 +163,6 @@ export default {
       ],
       cmdAuth: {},
       commandAuthority: false,
-      showUpgradeToEnterpriseDialog: false,
     }
   },
   created: async function () {
@@ -249,8 +242,6 @@ export default {
         } else {
           window.open('/tools/admin/scopes', '_blank')
         }
-      } else {
-        this.showUpgradeToEnterpriseDialog = true
       }
     },
     update() {

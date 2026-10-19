@@ -19,9 +19,15 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc. in 2026
 
 require "openc3/version"
 require "openc3/models/model"
+begin
+  require "openc3/models/role_model" # WarpLink rbac feature
+rescue LoadError
+end
 require "openc3/models/plugin_model"
 require "openc3/models/microservice_model"
 require "openc3/models/setting_model"
@@ -135,6 +141,10 @@ module OpenC3
       @tool_log_retain_time = @tool_log_retain_time.to_i if @tool_log_retain_time
       @cleanup_poll_time = @cleanup_poll_time.to_i
       super
+
+      # Every scope needs the built-in roles to exist before anyone can be
+      # granted anything. Seeding is idempotent and leaves edited roles alone.
+      RoleModel.seed(scope: @name) if defined?(RoleModel)
 
       if ENTERPRISE
         # If we're updating the scope and disabling command_authority
@@ -402,7 +412,7 @@ module OpenC3
 
     def seed_database
       setting = SettingModel.get(name: "source_url")
-      SettingModel.set({name: "source_url", data: "https://github.com/OpenC3/cosmos"}, scope: @scope) unless setting
+      SettingModel.set({name: "source_url", data: "https://github.com/attx-engineering/cosmos"}, scope: @scope) unless setting
       setting = SettingModel.get(name: "rubygems_url")
       SettingModel.set({name: "rubygems_url", data: ENV["RUBYGEMS_URL"] || "https://rubygems.org"}, scope: @scope) unless setting
       setting = SettingModel.get(name: "pypi_url")
