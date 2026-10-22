@@ -16,7 +16,8 @@ on:
 
 jobs:
   openc3-build-ubi:
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    # Its images come from Iron Bank, which needs OpenC3's own login: never in a fork.
+    if: ${{ github.actor != 'dependabot[bot]' && github.repository == 'OpenC3/cosmos' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
