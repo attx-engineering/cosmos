@@ -24,8 +24,7 @@ profile/
 plugins/DEFAULT/
 **/python/prof/
 *.dSYM/
-# CosmosUpdateCmdTlm.py input (its generated targets are ignored in
-# openc3-cosmos-warplink/.gitignore)
+# A build's cmd_tlm.json, and a simulation's graph_tree.json, are never committed
 cmd_tlm.json
 graph_tree.json
 # CFDP transfers (bind mounted into the containers, see compose.yaml)
