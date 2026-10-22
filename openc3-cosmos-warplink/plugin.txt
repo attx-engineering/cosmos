@@ -53,12 +53,12 @@ VARIABLE sim_host              host.docker.internal
 VARIABLE sim_write_port        5009
 
 # ---------------------------------------------------------------------------
-# WARP_CUBE
+# FLIGHT_BOARD
 # ---------------------------------------------------------------------------
-VARIABLE warp_cube_enable      true
-VARIABLE warp_cube_host        host.docker.internal
-VARIABLE warp_cube_write_port  5006
-VARIABLE warp_cube_read_port   5005
+VARIABLE flight_board_enable      true
+VARIABLE flight_board_host        host.docker.internal
+VARIABLE flight_board_write_port  5006
+VARIABLE flight_board_read_port   5005
 
 # ---------------------------------------------------------------------------
 # CFDP - file transfer
@@ -74,7 +74,7 @@ VARIABLE warp_cube_read_port   5005
 # check_pattern.py 512 (delineates both CCSDS packets and CFDP PDUs).
 # ---------------------------------------------------------------------------
 VARIABLE cfdp_enable            true
-VARIABLE cfdp_target            WARP_CUBE
+VARIABLE cfdp_target            FLIGHT_BOARD
 VARIABLE cfdp_local_entity_id   0
 VARIABLE cfdp_block_size        256
 <% if sim_enable.to_s.strip.downcase == "true" %>
@@ -86,17 +86,17 @@ INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_wri
   MAP_TARGET SIM
 <% end %>
 
-<% if warp_cube_enable.to_s.strip.downcase == "true" %>
-TARGET WARP_CUBE WARP_CUBE
+<% if flight_board_enable.to_s.strip.downcase == "true" %>
+TARGET FLIGHT_BOARD FLIGHT_BOARD
 
 # Uncomment the line that matches your hardware connection
-#INTERFACE WARP_CUBE_INT openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 230400 NONE 1 10.0 None # Serial to Linux
-#INTERFACE WARP_CUBE_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal 5000 5000 10.0 None # Docker routing to Windows bridge (router_port in bridge.txt)
-INTERFACE WARP_CUBE_INT openc3/interfaces/udp_interface.py <%= warp_cube_host %> <%= warp_cube_write_port %> <%= warp_cube_read_port %> None None 128 10.0 None # RasPi UDP
+#INTERFACE FLIGHT_BOARD_INT openc3/interfaces/serial_interface.py /dev/ttyUSB0 /dev/ttyUSB0 230400 NONE 1 10.0 None # Serial to Linux
+#INTERFACE FLIGHT_BOARD_INT openc3/interfaces/tcpip_client_interface.py host.docker.internal 5000 5000 10.0 None # Docker routing to Windows bridge (router_port in bridge.txt)
+INTERFACE FLIGHT_BOARD_INT openc3/interfaces/udp_interface.py <%= flight_board_host %> <%= flight_board_write_port %> <%= flight_board_read_port %> None None 128 10.0 None # RasPi UDP
   PROTOCOL WRITE cfdp_aware_crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
   PROTOCOL READ check_pattern.py 512
   PROTOCOL READ openc3/interfaces/protocols/crc_protocol.py CRC False ERROR -16 16 BIG_ENDIAN 0x8005 0xFFFF False True
-  MAP_TARGET WARP_CUBE
+  MAP_TARGET FLIGHT_BOARD
 <% end %>
 
 <% if cfdp_enable.to_s.strip.downcase == "true" %>
