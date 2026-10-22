@@ -11,6 +11,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 */
 
 // @ts-check
@@ -252,10 +256,11 @@ test('navigate logs and tools bucket', async ({ page, utils }) => {
 
   await page.getByText('tools').click()
   await expect(page).toHaveURL(/.*\/tools\/bucketexplorer\/tools%2F/)
+  // WarpLink adds three tools to COSMOS's: Calendar, CFDP Uplink and Sim Control
   if (process.env.ENTERPRISE === '1') {
-    await expect(page.locator('tbody > tr')).toHaveCount(23)
+    await expect(page.locator('tbody > tr')).toHaveCount(23 + 3)
   } else {
-    await expect(page.locator('tbody > tr')).toHaveCount(17)
+    await expect(page.locator('tbody > tr')).toHaveCount(17 + 3)
   }
 })
 
