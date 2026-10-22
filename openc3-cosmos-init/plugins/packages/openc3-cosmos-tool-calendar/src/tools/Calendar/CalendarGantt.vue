@@ -243,7 +243,10 @@ export default {
     tickStep: function () {
       // Aim for a tick roughly every 90px so labels stay readable
       const target = this.msPerPixel * 90
-      return TICK_STEPS.find((step) => step.ms >= target) || TICK_STEPS[TICK_STEPS.length - 1]
+      return (
+        TICK_STEPS.find((step) => step.ms >= target) ||
+        TICK_STEPS[TICK_STEPS.length - 1]
+      )
     },
     // Only ticks inside visibleWindow are built, so zooming to minute
     // resolution over a week doesn't create thousands of DOM nodes.
@@ -283,7 +286,11 @@ export default {
       })
       this.events.forEach((event) => {
         if (!byName[event.name]) {
-          byName[event.name] = { name: event.name, color: event.color, bars: [] }
+          byName[event.name] = {
+            name: event.name,
+            color: event.color,
+            bars: [],
+          }
         }
         byName[event.name].bars.push(this.makeBar(event))
       })
@@ -478,7 +485,8 @@ export default {
     makeBar: function (event) {
       // Clip to the visible window so an activity running past either edge
       // still shows a bar rather than overflowing the track
-      const start = event.start < this.range.start ? this.range.start : event.start
+      const start =
+        event.start < this.range.start ? this.range.start : event.start
       const stop = event.stop > this.range.stop ? this.range.stop : event.stop
       const width = Math.max(
         ((stop.getTime() - start.getTime()) / this.span) * 100,

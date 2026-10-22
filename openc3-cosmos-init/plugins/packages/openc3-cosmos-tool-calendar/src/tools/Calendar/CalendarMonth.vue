@@ -48,7 +48,8 @@
                 :class="`chip-status--${statusLevel(entry.event.status)}`"
               />
               <span class="chip-text">
-                {{ entry.timeLabel }} {{ entry.event.summary || entry.event.name }}
+                {{ entry.timeLabel }}
+                {{ entry.event.summary || entry.event.name }}
               </span>
             </div>
             <!-- Overflow opens the full list for that day rather than growing the cell -->

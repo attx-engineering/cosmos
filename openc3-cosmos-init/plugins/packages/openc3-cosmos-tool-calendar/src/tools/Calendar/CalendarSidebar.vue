@@ -96,14 +96,18 @@
           <!-- A paused timeline keeps its activities but will not run them -->
           <v-tooltip
             :text="
-              timeline.execute ? 'Executing - click to pause' : 'Paused - click to resume'
+              timeline.execute
+                ? 'Executing - click to pause'
+                : 'Paused - click to resume'
             "
             location="bottom"
           >
             <template #activator="{ props }">
               <v-btn
                 v-bind="props"
-                :icon="timeline.execute ? 'mdi-play-circle' : 'mdi-pause-circle'"
+                :icon="
+                  timeline.execute ? 'mdi-play-circle' : 'mdi-pause-circle'
+                "
                 :color="timeline.execute ? 'success' : 'warning'"
                 variant="text"
                 size="x-small"

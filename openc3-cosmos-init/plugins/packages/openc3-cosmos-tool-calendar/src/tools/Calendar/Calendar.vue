@@ -377,7 +377,11 @@ export default {
       if (this.view === 'month') {
         start = startOfWeek(startOfMonth(this.focus))
         stop = endOfWeek(endOfMonth(this.focus))
-      } else if (this.view === 'week' || this.view === 'gantt' || this.view === 'list') {
+      } else if (
+        this.view === 'week' ||
+        this.view === 'gantt' ||
+        this.view === 'list'
+      ) {
         start = startOfWeek(this.focus)
         stop = endOfWeek(this.focus)
       } else {
