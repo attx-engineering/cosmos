@@ -13,6 +13,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 import json
 from datetime import datetime, timezone
@@ -61,16 +65,23 @@ def delete_timeline(name, force=False, scope=OPENC3_SCOPE):
     return _handle_response(response, "Failed to delete timeline")
 
 
-def create_timeline_activity(name, kind, start, stop, data={}, scope=OPENC3_SCOPE):
+# approve_hazardous=True approves the command if COSMOS marks it hazardous when
+# it runs, recorded by the server as the caller's. Without it, a hazardous
+# command fails at its time.
+def create_timeline_activity(name, kind, start, stop, data={}, approve_hazardous=False, scope=OPENC3_SCOPE):
     kind = kind.lower()
     kinds = ["command", "script", "reserve"]
     if kind not in kinds:
         raise RuntimeError(f"Unknown kind: {kind}. Must be one of {', '.join(kinds)}.")
+    if approve_hazardous and kind != "command":
+        raise RuntimeError("approve_hazardous is only for a command activity")
     post_data = {}
     post_data["start"] = start.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     post_data["stop"] = stop.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     post_data["kind"] = kind
     post_data["data"] = data
+    if approve_hazardous:
+        post_data["approve_hazardous"] = True
     response = openc3.script.API_SERVER.request(
         "post",
         f"/openc3-api/timeline/{name}/activities",

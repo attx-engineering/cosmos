@@ -19,6 +19,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require "rails_helper"
 require "openc3/utilities/store_autoload"
@@ -472,6 +476,98 @@ RSpec.describe ActivityController, type: :controller do
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body, allow_nan: true, create_additions: true)
       expect(json.empty?).to eql(true)
+    end
+  end
+
+  describe "hazardous command approval" do
+    def command_activity(command, start = 1.0)
+      generate_activity_hash(start).merge({"data" => {"command" => command}, "scope" => "DEFAULT", "name" => "test"})
+    end
+
+    def body
+      JSON.parse(response.body, allow_nan: true, create_additions: true)
+    end
+
+    it "records who approved a hazardous command when it is scheduled" do
+      post :create, params: command_activity("INST VENT").merge({"approve_hazardous" => "true"})
+      expect(response).to have_http_status(:created)
+      approval = body["data"]["hazardous_approval"]
+      expect(approval["by"]).to eql("anonymous")
+      expect(approval["command"]).to eql("INST VENT")
+      expect { Time.iso8601(approval["at"]) }.not_to raise_error
+    end
+
+    it "drops an approval that a request writes into the activity's data" do
+      hash = command_activity("INST VENT")
+      hash["data"]["hazardous_approval"] = {"by" => "someone", "at" => "2031-04-16T01:02:00Z", "command" => "INST VENT"}
+      post :create, params: hash
+      expect(response).to have_http_status(:created)
+      expect(body["data"]).not_to have_key("hazardous_approval")
+    end
+
+    it "refuses an approval from someone not allowed to send the command, and schedules nothing" do
+      allow(controller).to receive(:authorize) do |args|
+        raise OpenC3::ForbiddenError.new("no") if args[:permission] == "cmd"
+        "operator"
+      end
+      post :create, params: command_activity("INST VENT").merge({"approve_hazardous" => "true"})
+      expect(response).to have_http_status(:forbidden)
+      expect(body["message"]).to eql("anonymous is not authorized to send commands to INST")
+      get :count, params: {"scope" => "DEFAULT", "name" => "test"}
+      expect(body["count"]).to eql(0)
+    end
+
+    it "asks the target of the command for the permission to send it" do
+      targets = []
+      allow(controller).to receive(:authorize) do |args|
+        targets << args[:target_name] if args[:permission] == "cmd"
+        "operator"
+      end
+      post :create, params: command_activity("inst VENT with AMOUNT 1").merge({"approve_hazardous" => "true"})
+      expect(response).to have_http_status(:created)
+      expect(targets).to eql(["INST"])
+    end
+
+    it "refuses approve_hazardous on an activity that is not a command" do
+      hash = generate_activity_hash(1.0).merge({"kind" => "SCRIPT", "data" => {"script" => "INST/procedures/vent.rb"}})
+      post :create, params: hash.merge({"scope" => "DEFAULT", "name" => "test", "approve_hazardous" => "true"})
+      expect(response).to have_http_status(400)
+      expect(body["message"]).to eql("approve_hazardous is only for a command activity that has a command")
+    end
+
+    it "asks for a new approval whenever the activity is changed" do
+      post :create, params: command_activity("INST VENT").merge({"approve_hazardous" => "true"})
+      created = body
+      expect(created["data"]["hazardous_approval"]).not_to be_nil
+      put :update, params: command_activity("INST VENT", 2.0).merge({"id" => created["start"], "uuid" => created["uuid"]})
+      expect(response).to have_http_status(:ok)
+      updated = body
+      expect(updated["data"]).not_to have_key("hazardous_approval")
+      put :update, params: command_activity("INST VENT", 3.0).merge(
+        {"id" => updated["start"], "uuid" => updated["uuid"], "approve_hazardous" => "true"}
+      )
+      expect(response).to have_http_status(:ok)
+      expect(body["data"]["hazardous_approval"]["command"]).to eql("INST VENT")
+    end
+
+    it "records each approval a multi_create asks for, and drops any other" do
+      dt = DateTime.now.new_offset(0)
+      post_array = [1, 2].map do |i|
+        {
+          "name" => "test",
+          "start" => (dt + (i / 24.0)).to_s,
+          "stop" => (dt + ((i + 0.5) / 24.0)).to_s,
+          "kind" => "COMMAND",
+          "data" => {"command" => "INST VENT"},
+        }
+      end
+      post_array[0]["approve_hazardous"] = "true"
+      post_array[1]["data"]["hazardous_approval"] = {"by" => "someone", "at" => "2031-04-16T01:02:00Z", "command" => "INST VENT"}
+      post :multi_create, params: {"scope" => "DEFAULT", "multi" => post_array}
+      expect(response).to have_http_status(:ok)
+      expect(body.length).to eql(2)
+      expect(body[0]["data"]["hazardous_approval"]["by"]).to eql("anonymous")
+      expect(body[1]["data"]).not_to have_key("hazardous_approval")
     end
   end
 end
