@@ -52,6 +52,10 @@ CRC16_LEN_BYTES = 2
 # chunk size here must reserve the same amount or File Data PDUs get dropped.
 MAX_CFDP_HEADER_SIZE = 22
 
+# The longest file name most filesystems take (NAME_MAX). A received file's
+# status sidecar, its name plus CfdpReceiver.STATUS_SUFFIX, must fit too.
+MAX_FILE_NAME_BYTES = 255
+
 # CFDP File Directive codes used by this minimal implementation.
 EOF_FD = 0x04
 METADATA_FD = 0x07
@@ -148,10 +152,13 @@ def safe_filename(name: str) -> str:
     Prevent path traversal from CFDP metadata.
 
     CFDP metadata can contain arbitrary path strings. For this receiver, only the
-    basename is honored so a remote sender cannot write outside output_dir.
+    basename is honored so a remote sender cannot write outside output_dir. A NUL
+    ends the name, as it does in the flight side's C strings, and a name of only
+    dots ("." or "..") is a folder, never a file.
     """
+    name = name.split("\x00", 1)[0]
     name = os.path.basename(name.replace("\\", "/"))
-    return name if name else "unnamed_cfdp_file.bin"
+    return name if name.strip(".") else "unnamed_cfdp_file.bin"
 
 
 def parse_lv_string(data: bytes, idx: int) -> Tuple[str, int]:
@@ -226,8 +233,11 @@ def _merge_rx_segment(
     """
     Merge a newly-received [start, end) range into a sorted list of
     non-overlapping (start, end) tuples, coalescing with anything in
-    `segments` that overlaps or touches it.
+    `segments` that overlaps or touches it. An empty range adds nothing.
     """
+    if end <= start:
+        return sorted(segments)
+
     merged_start, merged_end = start, end
     result: List[Tuple[int, int]] = []
     inserted = False
@@ -480,6 +490,9 @@ class CfdpReceiver:
         data = pdu.data_no_crc
         idx = 0
 
+        if len(data) < 2:
+            raise CfdpParseError("Metadata PDU too short")
+
         directive = data[idx]
         idx += 1
         if directive != METADATA_FD:
@@ -502,6 +515,18 @@ class CfdpReceiver:
         source_name, idx = parse_lv_string(data, idx)
         dest_name, idx = parse_lv_string(data, idx)
 
+        safe_name = safe_filename(dest_name)
+        if len((safe_name + self.STATUS_SUFFIX).encode("utf-8")) > MAX_FILE_NAME_BYTES:
+            raise CfdpParseError(f"Destination file name is too long to stage with its status: '{safe_name}'")
+        staged_path = self.output_dir / self.STAGING_SUBDIR / safe_name
+
+        # The staged file is emptied below, so another transfer still staging
+        # it could only finish with this one's bytes in it: it is abandoned.
+        for other_key, other in list(self.transactions.items()):
+            if other_key != key and other.file_path == staged_path:
+                self.log("error", f"CFDP tx={other_key} abandoned: tx={key} now receives '{safe_name}'")
+                del self.transactions[other_key]
+
         transaction = self._get_or_create_transaction(key)
         transaction.source_file_name = source_name
         transaction.dest_file_name = dest_name
@@ -510,9 +535,7 @@ class CfdpReceiver:
         transaction.checksum_accum = 0
         transaction.complete = False
         transaction.rx_segments = []
-
-        safe_name = safe_filename(dest_name)
-        transaction.file_path = self.output_dir / self.STAGING_SUBDIR / safe_name
+        transaction.file_path = staged_path
 
         # Reset any previous partial file for this destination.
         with open(transaction.file_path, "wb"):
@@ -527,11 +550,15 @@ class CfdpReceiver:
 
         return transaction
 
-    def _handle_file_data(self, key: TransactionKey, pdu: ParsedPdu) -> CfdpTransaction:
+    def _handle_file_data(self, key: TransactionKey, pdu: ParsedPdu) -> Optional[CfdpTransaction]:
         transaction = self._get_or_create_transaction(key)
 
         if transaction.file_path is None:
             raise CfdpParseError(f"File Data before Metadata for tx={key}")
+
+        if self._is_finished(transaction):
+            self.log("warn", f"Ignoring File Data after EOF for tx={key}")
+            return None
 
         offset_len = 8 if pdu.large_file else 4
         if len(pdu.data_no_crc) < offset_len:
@@ -595,11 +622,12 @@ class CfdpReceiver:
 
         return transaction
 
-    def _handle_eof(self, key: TransactionKey, pdu: ParsedPdu) -> CfdpTransaction:
+    def _handle_eof(self, key: TransactionKey, pdu: ParsedPdu) -> Optional[CfdpTransaction]:
         data = pdu.data_no_crc
         idx = 0
 
-        if len(data) < 10:
+        file_size_len = 8 if pdu.large_file else 4
+        if len(data) < 6 + file_size_len:
             raise CfdpParseError("EOF PDU too short")
 
         directive = data[idx]
@@ -614,11 +642,16 @@ class CfdpReceiver:
         file_checksum = parse_int_be(data[idx : idx + 4])
         idx += 4
 
-        file_size_len = 8 if pdu.large_file else 4
         file_size = parse_int_be(data[idx : idx + file_size_len])
         idx += file_size_len
 
         transaction = self._get_or_create_transaction(key)
+        if transaction.file_path is None:
+            raise CfdpParseError(f"EOF before Metadata for tx={key}")
+        if self._is_finished(transaction):
+            self.log("warn", f"Ignoring repeated EOF for tx={key}")
+            return None
+
         transaction.expected_checksum = file_checksum
         transaction.condition_code = condition_code
 
@@ -668,6 +701,10 @@ class CfdpReceiver:
         )
 
         return transaction
+
+    def _is_finished(self, transaction: "CfdpTransaction") -> bool:
+        """Whether EOF has moved the transaction's file out of STAGING_SUBDIR; nothing writes to it then."""
+        return transaction.file_path.parent != self.output_dir / self.STAGING_SUBDIR
 
     def _move_to_failed(self, transaction: "CfdpTransaction", reason: str):
         """Move a transaction's staged file out of in_progress/ so it never looks complete."""
@@ -829,6 +866,18 @@ class CfdpSender:
             seq_num_len=self.seq_num_len,
         )
 
+    def _check_data_field(self, kind: str, raw_pdu: bytes):
+        """
+        Refuse a PDU the flight side would drop: its receiver takes a data field,
+        CRC included, of at most max_pdu_bytes - MAX_CFDP_HEADER_SIZE.
+        """
+        data_field = len(raw_pdu) - self.fixed_header_len
+        limit = self.max_pdu_bytes - MAX_CFDP_HEADER_SIZE
+        if data_field > limit:
+            raise CfdpBuildError(
+                f"{kind} PDU data field is {data_field} bytes, the receiver takes at most {limit}"
+            )
+
     def build_file_transfer(self, local_path: str, remote_name: str) -> Iterator[OutboundPdu]:
         """
         Yield Metadata, FileData*, EOF PDUs for a local file.
@@ -848,6 +897,9 @@ class CfdpSender:
             raise CfdpBuildError(
                 f"Metadata PDU is {len(metadata)} bytes, max is {self.max_pdu_bytes}"
             )
+        self._check_data_field("Metadata", metadata)
+        # An EOF's length does not depend on its checksum: refuse it before anything is sent.
+        self._check_data_field("EOF", self._build_eof(0, file_size))
 
         yield OutboundPdu(kind="metadata", seq_num=self.seq_num, offset=None, raw_pdu=metadata)
 
