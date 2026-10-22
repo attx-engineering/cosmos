@@ -12,6 +12,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require "rails_helper"
 require "openc3/utilities/bucket"
@@ -606,6 +610,8 @@ RSpec.describe StorageController, type: :controller do
           { volume: "OPENC3_UNKNOWN_VOLUME", message: "Unknown volume OPENC3_UNKNOWN_VOLUME" }
         ].each do |test_case|
           storage_key = test_case.keys.first
+          # Only this variable is stubbed: authorization reads others (OpenC3::Rbac).
+          allow(ENV).to receive(:[]).and_call_original
           allow(ENV).to receive(:[]).with(test_case[storage_key]).and_return(nil)
 
           post :download_multiple_files, params: test_case.merge(path: "test/", files: ["file1.txt"], scope: "DEFAULT")
@@ -693,6 +699,7 @@ RSpec.describe StorageController, type: :controller do
     end
 
     it "handles errors" do
+      allow(ENV).to receive(:[]).and_call_original
       allow(ENV).to receive(:[]).with("OPENC3_CONFIG_BUCKET").and_raise(StandardError.new("General error"))
 
       delete :delete, params: {bucket: "OPENC3_CONFIG_BUCKET", object_id: "file.txt", scope: "DEFAULT"}

@@ -12,6 +12,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require "rails_helper"
 require "openc3/models/tool_model"
@@ -116,6 +120,17 @@ RSpec.describe ToolsController, type: :controller do
   end
 
   describe "GET auth" do
+    # A Keycloak URL turns role-based access on (OpenC3::Rbac.enabled?), so one left
+    # set would put every spec after these behind RBAC: each is put back as it was.
+    KEYCLOAK_ENV = %w(OPENC3_KEYCLOAK_REALM OPENC3_KEYCLOAK_URL OPENC3_KEYCLOAK_EXTERNAL_URL OPENC3_API_CLIENT)
+
+    around(:each) do |example|
+      saved = KEYCLOAK_ENV.to_h { |name| [name, ENV[name]] }
+      example.run
+    ensure
+      saved.each { |name, value| ENV[name] = value }
+    end
+
     before(:each) do
       ENV["OPENC3_KEYCLOAK_REALM"] = nil
       ENV["OPENC3_KEYCLOAK_URL"] = nil
