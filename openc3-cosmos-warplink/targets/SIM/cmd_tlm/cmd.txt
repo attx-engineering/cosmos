@@ -48,7 +48,7 @@
 # outputs are recomputed each step - set params/inputs for changes that stick.
 #
 # This target is hand written.  Unlike WARP_CUBE and NSNS it is not generated
-# by CosmosUpdateCmdTlm.py, because it does not come from a WarpOS build.
+# by WarpLink's generator, because it does not come from a WarpOS build.
 # ##############################################################################
 
 COMMAND SIM SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
