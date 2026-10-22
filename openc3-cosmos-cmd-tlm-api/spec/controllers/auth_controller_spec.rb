@@ -15,6 +15,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require 'rails_helper'
 
@@ -65,13 +69,13 @@ RSpec.describe AuthController, :type => :controller do
   describe "set" do
     it "revokes old sessions and issues a new token on password change" do
       # Set initial password and get a session token
-      post :set, params: { password: 'PASSWORD' }
+      post :set, params: { token: 'PASSWORD' }
       expect(response).to have_http_status(:ok)
       old_token = response.body
       expect(old_token).not_to be_empty
 
       # Change password
-      post :set, params: { password: 'PASSWORD2', old_password: 'PASSWORD' }
+      post :set, params: { token: 'PASSWORD2', old_token: 'PASSWORD' }
       expect(response).to have_http_status(:ok)
       new_token = response.body
       expect(new_token).not_to be_empty

@@ -175,6 +175,8 @@ module OpenC3
         plugins.each do |_plugin_name, plugin|
           plugin.destroy
         end
+        # The scope's roles, seeded when it was created, go with it
+        RoleModel.destroy_all(scope: @name)
         super
       else
         raise "DEFAULT scope cannot be destroyed"

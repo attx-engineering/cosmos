@@ -33,7 +33,8 @@ jobs:
         env:
           OPENC3_TAG: ${{ github.sha }}
       - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.2.4
+        # v0.2.4 is gone from setup-trivy's tags; v0.2.6, by its commit
+        uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.6
         with:
           cache: true
           version: v0.68.2

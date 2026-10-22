@@ -101,6 +101,12 @@ module OpenC3
       self.new(**json.transform_keys(&:to_sym), scope: scope)
     end
 
+    # Every role of a scope, the built-in ones among them: only for a scope that
+    # is being destroyed itself, which leaves nothing to hold them.
+    def self.destroy_all(scope:)
+      Store.del("#{scope}__#{PRIMARY_KEY}")
+    end
+
     # Recreate any missing built-in role. Safe to call repeatedly - roles that
     # already exist are left alone so local edits to them survive a restart.
     def self.seed(scope:)

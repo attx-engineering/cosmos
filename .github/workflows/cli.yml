@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: COSMOS's demo targets, which these tests drive
+        # WarpLink ships with them off (.env); the tests turn them on in this copy alone
+        run: sed -i 's/^# OPENC3_DEMO=1$/OPENC3_DEMO=1/' .env && grep -q '^OPENC3_DEMO=1$' .env
       - name: openc3.sh build
         # This `shell` line is required to get around a known issue: https://github.com/actions/runner/issues/241#issuecomment-745902718
         shell: 'script -q -e -c "bash {0}"'

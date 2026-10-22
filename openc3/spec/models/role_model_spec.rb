@@ -134,6 +134,17 @@ module OpenC3
       end
     end
 
+    describe 'self.destroy_all' do
+      it "removes every role of a scope, the built-in ones too, and no other scope's" do
+        RoleModel.seed(scope: 'GONE')
+        RoleModel.new(name: 'custom', scope: 'GONE', permissions: ['tlm']).create
+        RoleModel.seed(scope: 'KEPT')
+        RoleModel.destroy_all(scope: 'GONE')
+        expect(RoleModel.names(scope: 'GONE')).to eq([])
+        expect(RoleModel.names(scope: 'KEPT').sort).to eq(%w(admin operator viewer))
+      end
+    end
+
     describe 'self.seed' do
       it 'creates the built-in roles' do
         expect(RoleModel.seed(scope: scope).sort).to eq(%w(admin operator viewer))
