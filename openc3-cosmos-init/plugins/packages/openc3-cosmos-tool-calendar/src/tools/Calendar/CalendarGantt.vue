@@ -1,19 +1,16 @@
 <!--
-###############################################################################
-# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+# Copyright 2026 ATTX, Inc.
+# All Rights Reserved.
 #
-# This software and associated documentation (the "Software") are the
-# proprietary and confidential information of ATTX, Inc. The Software is
-# furnished under a license agreement between ATTX and the user organization
-# and may be used or copied only in accordance with the terms of the agreement.
-# Refer to 'license/attx_license.adoc' for standard license terms.
+# This program is free software; you can modify and/or redistribute it
+# under the terms of the GNU Affero General Public License
+# as published by the Free Software Foundation; version 3 with
+# attribution addendums as found in the LICENSE.txt
 #
-# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
-# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
-# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
-# transmitted in any form or by any means, for any purpose, without the express
-# written permission of ATTX, Inc.
-###############################################################################
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
 -->
 
 <template>
@@ -246,7 +243,10 @@ export default {
     tickStep: function () {
       // Aim for a tick roughly every 90px so labels stay readable
       const target = this.msPerPixel * 90
-      return TICK_STEPS.find((step) => step.ms >= target) || TICK_STEPS[TICK_STEPS.length - 1]
+      return (
+        TICK_STEPS.find((step) => step.ms >= target) ||
+        TICK_STEPS[TICK_STEPS.length - 1]
+      )
     },
     // Only ticks inside visibleWindow are built, so zooming to minute
     // resolution over a week doesn't create thousands of DOM nodes.
@@ -286,7 +286,11 @@ export default {
       })
       this.events.forEach((event) => {
         if (!byName[event.name]) {
-          byName[event.name] = { name: event.name, color: event.color, bars: [] }
+          byName[event.name] = {
+            name: event.name,
+            color: event.color,
+            bars: [],
+          }
         }
         byName[event.name].bars.push(this.makeBar(event))
       })
@@ -481,7 +485,8 @@ export default {
     makeBar: function (event) {
       // Clip to the visible window so an activity running past either edge
       // still shows a bar rather than overflowing the track
-      const start = event.start < this.range.start ? this.range.start : event.start
+      const start =
+        event.start < this.range.start ? this.range.start : event.start
       const stop = event.stop > this.range.stop ? this.range.stop : event.stop
       const width = Math.max(
         ((stop.getTime() - start.getTime()) / this.span) * 100,

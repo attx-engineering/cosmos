@@ -1,19 +1,16 @@
 <!--
-###############################################################################
-# Copyright (c) ATTX, Inc. 2026. All Rights Reserved.
+# Copyright 2026 ATTX, Inc.
+# All Rights Reserved.
 #
-# This software and associated documentation (the "Software") are the
-# proprietary and confidential information of ATTX, Inc. The Software is
-# furnished under a license agreement between ATTX and the user organization
-# and may be used or copied only in accordance with the terms of the agreement.
-# Refer to 'license/attx_license.adoc' for standard license terms.
+# This program is free software; you can modify and/or redistribute it
+# under the terms of the GNU Affero General Public License
+# as published by the Free Software Foundation; version 3 with
+# attribution addendums as found in the LICENSE.txt
 #
-# EXPORT CONTROL NOTICE: THIS SOFTWARE MAY INCLUDE CONTENT CONTROLLED UNDER THE
-# INTERNATIONAL TRAFFIC IN ARMS REGULATIONS (ITAR) OR THE EXPORT ADMINISTRATION
-# REGULATIONS (EAR99). No part of the Software may be used, reproduced, or
-# transmitted in any form or by any means, for any purpose, without the express
-# written permission of ATTX, Inc.
-###############################################################################
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
 -->
 
 <template>
@@ -99,14 +96,18 @@
           <!-- A paused timeline keeps its activities but will not run them -->
           <v-tooltip
             :text="
-              timeline.execute ? 'Executing - click to pause' : 'Paused - click to resume'
+              timeline.execute
+                ? 'Executing - click to pause'
+                : 'Paused - click to resume'
             "
             location="bottom"
           >
             <template #activator="{ props }">
               <v-btn
                 v-bind="props"
-                :icon="timeline.execute ? 'mdi-play-circle' : 'mdi-pause-circle'"
+                :icon="
+                  timeline.execute ? 'mdi-play-circle' : 'mdi-pause-circle'
+                "
                 :color="timeline.execute ? 'success' : 'warning'"
                 variant="text"
                 size="x-small"
