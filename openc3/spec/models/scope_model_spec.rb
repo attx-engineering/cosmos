@@ -19,6 +19,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require 'spec_helper'
 require 'openc3/models/scope_model'
@@ -155,7 +159,8 @@ module OpenC3
         model.deploy(dir, {})
 
         topics = EphemeralStore.scan_each(match: "#{scope}*", type: 'hash', count: 100).to_a.uniq.sort
-        expect(topics).to eql(['TEST__openc3_targets'])
+        # A scope is created with its role-based access roles (RoleModel.seed)
+        expect(topics).to eql(['TEST__openc3_roles', 'TEST__openc3_targets'])
         topics = EphemeralStore.scan_each(match: "#{scope}*", type: 'stream', count: 100).to_a.uniq.sort
         expect(topics).to eql([])
         model.destroy
