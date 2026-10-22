@@ -14,6 +14,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 -->
 
 <template>
@@ -52,6 +56,7 @@
               :items="targets"
               item-title="label"
               item-value="value"
+              data-test="new-screen-target"
               @update:model-value="targetSelect"
             />
           </v-col>

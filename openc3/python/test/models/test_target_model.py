@@ -16,6 +16,10 @@
 #
 # A portion of this file was funded by Blue Origin Enterprises, L.P.
 # See https://github.com/OpenC3/cosmos/pull/1953
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 import unittest
 import unittest.mock
@@ -362,9 +366,11 @@ class TestTargetModelStaleTlmCntKeys(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             TargetModel.init_tlm_packet_counts(["INST"], scope="DEFAULT")
 
-    def test_sync_tlm_packet_counts_raises_for_stale_redis_key(self):
-        # Simulate a stale Redis key left over from a removed packet definition.
+    def test_sync_tlm_packet_counts_skips_stale_redis_key(self):
+        # Simulate a stale Redis key left over from a removed packet definition,
+        # beside a packet that still exists.
         Store.hset("DEFAULT__TELEMETRYCNTS__{INST}", "OLD_PACKET", 5)
+        Store.hset("DEFAULT__TELEMETRYCNTS__{INST}", "ADCS", 7)
 
         packet = System.telemetry.packet("INST", "HEALTH_STATUS")
 
@@ -372,8 +378,7 @@ class TestTargetModelStaleTlmCntKeys(unittest.TestCase):
         # immediately on the first call rather than waiting for the delay to expire.
         TargetModel.sync_packet_count_time = None
 
-        # During the sync the code does hgetall on the TELEMETRYCNTS hash and then
-        # calls System.telemetry.packet() for every key in the result, including the
-        # stale OLD_PACKET key, which raises RuntimeError.
-        with self.assertRaises(RuntimeError):
-            TargetModel.sync_tlm_packet_counts(packet, ["INST"], scope="DEFAULT")
+        # The sync skips the stale OLD_PACKET key rather than raising RuntimeError,
+        # which would disconnect the interface, and still takes every other count.
+        TargetModel.sync_tlm_packet_counts(packet, ["INST"], scope="DEFAULT")
+        self.assertEqual(System.telemetry.packet("INST", "ADCS").received_count, 7)
