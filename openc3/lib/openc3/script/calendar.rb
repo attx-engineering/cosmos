@@ -15,6 +15,10 @@
 
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require 'date'
 require 'time' # Time.parse, for pass times given as strings
@@ -58,17 +62,24 @@ module OpenC3
       return _cal_handle_response(response, 'Failed to delete timeline')
     end
 
-    def create_timeline_activity(name, kind:, start:, stop:, data: {}, scope: $openc3_scope)
+    # approve_hazardous: true approves the command if COSMOS marks it hazardous
+    # when it runs, recorded by the server as the caller's. Without it, a
+    # hazardous command fails at its time.
+    def create_timeline_activity(name, kind:, start:, stop:, data: {}, approve_hazardous: false, scope: $openc3_scope)
       kind = kind.to_s.downcase()
       kinds = %w(command script reserve)
       unless kinds.include?(kind)
         raise "Unknown kind: #{kind}. Must be one of #{kinds.join(', ')}."
+      end
+      if approve_hazardous and kind != 'command'
+        raise "approve_hazardous is only for a command activity"
       end
       post_data = {}
       post_data['start'] = start.to_datetime.iso8601
       post_data['stop'] = stop.to_datetime.iso8601
       post_data['kind'] = kind
       post_data['data'] = data
+      post_data['approve_hazardous'] = true if approve_hazardous
       response = $api_server.request('post', "/openc3-api/timeline/#{name}/activities", data: post_data, json: true, scope: scope)
       return _cal_handle_response(response, 'Failed to create timeline activity')
     end

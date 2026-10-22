@@ -7,5 +7,9 @@ block that simply occupies time on the calendar. Each timeline is backed by its
 own `timeline_microservice` which runs the activities at their scheduled time
 and records the outcome back onto the activity.
 
+A command activity whose command is hazardous when it runs is sent only if it
+was approved when it was scheduled (`approve_hazardous`, recorded by the
+activity API); otherwise the activity fails, saying why.
+
 Reserve activities are also how satellite pass windows are represented - see
 `create_pass_activities` in the COSMOS script API.

@@ -129,13 +129,19 @@ module OpenC3
         begin
           cmd(command, scope: @scope)
         rescue HazardousError => e
-          # There is nobody to prompt at execution time. Scheduling the activity
-          # is the operator's approval, so the command is resent with the check
-          # bypassed - but it is logged and recorded on the activity so the
-          # approval is auditable after the fact.
-          @logger.warn "TimelineWorker sending hazardous command #{command} for #{@timeline_name}: #{e.hazardous_description}"
+          # There is nobody to prompt at execution time, so a hazardous command is
+          # sent only if someone allowed to send it approved it when it was
+          # scheduled. The activity API records that approval, for this exact
+          # command. Without it the command fails rather than going out unchecked.
+          approval = activity.data['hazardous_approval']
+          unless approval.is_a?(Hash) and approval['command'] == command
+            @logger.warn "TimelineWorker refused hazardous command #{command} for #{@timeline_name}, not approved when scheduled: #{e.hazardous_description}"
+            activity.commit(status: 'failed', message: "hazardous command not approved when it was scheduled: #{e.hazardous_description}", fulfillment: false)
+            return
+          end
+          @logger.warn "TimelineWorker sending hazardous command #{command} for #{@timeline_name}, approved by #{approval['by']} at #{approval['at']}: #{e.hazardous_description}"
           cmd_no_hazardous_check(command, scope: @scope)
-          message = "#{command} (hazardous, approved by scheduling)"
+          message = "#{command} (hazardous, approved by #{approval['by']} at #{approval['at']})"
         end
         @logger.info "TimelineWorker sent command #{command} for #{@timeline_name}"
         activity.commit(status: 'completed', message: message, fulfillment: true)

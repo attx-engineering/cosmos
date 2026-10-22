@@ -51,6 +51,8 @@ Activities can run single commands, run a script, or simply "Reserve" space on t
 
 ![CreateActivity2](/img/calendar/create_activity2.png)
 
+A command that is hazardous when its activity runs is sent only if it was approved when it was scheduled, since no one is asked to confirm it then. Check **Approve sending this command if it is hazardous when it runs** to approve it; the dialog warns when the command is hazardous now. The approval is recorded as yours, needs permission to send that command, and holds for that command alone: changing the activity asks for it again. Without it, a hazardous command's activity fails at its time, saying why.
+
 When calendar activities are scheduled they appear with a status icon, compliant with the AstroUX standards. As calendar activities are executed, there are lifecycle hooks set to track and display the latest status update from the executed script or command. Green circle will signify nominal (created, started, completed states), yellow square signifies warnings (script stopped, paused, hit breakpoint, completed with errors, disabled), and red triangle signifies error states (error, failed, crashed). Clicking into a Calendar Activity will show the details of the status updates.
 
 ![Activity](/img/calendar/activity.png)

@@ -18,6 +18,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 -->
 
 <template>
@@ -239,6 +243,33 @@
                     data-test="activity-cmd"
                     @click:control="editItem()"
                   />
+                  <v-alert
+                    v-if="hazardousNow"
+                    type="warning"
+                    variant="tonal"
+                    density="compact"
+                    class="mb-2"
+                    data-test="activity-hazardous"
+                  >
+                    This command is hazardous. No one is asked to confirm it
+                    when it runs, so it is sent only if you approve it now.
+                  </v-alert>
+                  <v-checkbox
+                    v-model="approveHazardous"
+                    density="compact"
+                    hide-details
+                    label="Approve sending this command if it is hazardous when it runs"
+                    data-test="activity-approve-hazardous"
+                  />
+                  <div
+                    v-if="previousApproval"
+                    class="text-caption mx-2"
+                    data-test="activity-previous-approval"
+                  >
+                    Approved by {{ previousApproval.by }} at
+                    {{ previousApproval.at }}. Saving a change asks for the
+                    approval again.
+                  </div>
                 </div>
                 <div v-else-if="kind === 'SCRIPT'" class="ma-3">
                   <script-chooser @file="fileHandler" />
@@ -308,7 +339,7 @@
 </template>
 
 <script>
-import { Api } from '@openc3/js-common/services'
+import { Api, OpenC3Api } from '@openc3/js-common/services'
 import {
   EnvironmentChooser,
   ScriptChooser,
@@ -363,6 +394,12 @@ export default {
       dialogTitle: 'Add Command',
       dialogError: '',
       dialogCmdString: null,
+      // A hazardous command runs with no one to confirm it, so it is sent only
+      // if approved when it is scheduled. The server records the approval as
+      // the signed-in person's, for this command alone.
+      approveHazardous: false,
+      hazardousNow: false,
+      previousApproval: null,
     }
   },
   computed: {
@@ -407,6 +444,14 @@ export default {
       return !!this.timeError || !this.timeline
     },
   },
+  watch: {
+    kind: function () {
+      this.checkHazardous()
+    },
+    activityData: function () {
+      this.checkHazardous()
+    },
+  },
   mounted: function () {
     this.updateValues()
   },
@@ -436,6 +481,7 @@ export default {
         this.activityEnvironment = this.activity.data.environment
         this.customTitle = this.activity.data.customTitle || ''
         this.notes = this.activity.data.notes || ''
+        this.previousApproval = this.activity.data.hazardous_approval || null
         if (this.activity.recurring?.uuid) {
           this.recurring = true
           const rDate = new Date(this.activity.recurring.end * 1000)
@@ -454,7 +500,27 @@ export default {
         this.customTitle = ''
         this.notes = ''
         this.timeline = this.timelineNames[0]
+        this.previousApproval = null
       }
+      this.approveHazardous = false
+      this.checkHazardous()
+    },
+    // Whether the command is hazardous now, to warn. Approving does not depend
+    // on it: a command can become hazardous by the time it runs.
+    checkHazardous: function () {
+      this.hazardousNow = false
+      const command = this.activityData
+      if (this.kind !== 'COMMAND' || !command) {
+        return
+      }
+      new OpenC3Api()
+        .get_cmd_hazardous(command)
+        .then((hazardous) => {
+          if (this.kind === 'COMMAND' && this.activityData === command) {
+            this.hazardousNow = hazardous === true
+          }
+        })
+        .catch(() => {})
     },
     clearHandler: function () {
       this.show = !this.show
@@ -490,6 +556,10 @@ export default {
         notes: this.notes,
       }
       data[kind] = this.activityData
+      const approval =
+        kind === 'command' && this.approveHazardous
+          ? { approve_hazardous: true }
+          : {}
       let recurring = {}
       if (this.recurring) {
         recurring = {
@@ -502,7 +572,7 @@ export default {
         Api.put(
           `/openc3-api/timeline/${this.activity.name}/activity/${this.activity.start}`,
           {
-            data: { start, stop, kind, data, recurring },
+            data: { start, stop, kind, data, recurring, ...approval },
           },
         )
           .then((response) => {
@@ -521,7 +591,7 @@ export default {
           })
       } else {
         Api.post(`/openc3-api/timeline/${this.timeline}/activities`, {
-          data: { start, stop, kind, data, recurring },
+          data: { start, stop, kind, data, recurring, ...approval },
         })
           .then((response) => {
             const activityTime = this.formatSeconds(
