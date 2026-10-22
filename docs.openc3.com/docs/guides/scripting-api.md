@@ -8851,11 +8851,13 @@ delete_timeline("Other", force=True)
 
 Create an activity on an existing timeline. Activities can be one of COMMAND, SCRIPT, or RESERVE. Activities have a start and stop time and commands and scripts take data on the command or script to execute.
 
+A COMMAND activity whose command is hazardous when it runs is sent only if it was approved when it was scheduled: there is no one to ask at its time. `approve_hazardous` records that approval, as the caller's, who must be allowed to send the command. It holds for that command alone, and changing the activity drops it. Without it, the activity fails at its time and says why.
+
 <Tabs groupId="script-language">
 <TabItem value="ruby" label="Ruby Syntax">
 
 ```ruby
-create_timeline_activity(name, kind:, start:, stop:, data: {})
+create_timeline_activity(name, kind:, start:, stop:, data: {}, approve_hazardous: false)
 ```
 
 </TabItem>
@@ -8863,7 +8865,7 @@ create_timeline_activity(name, kind:, start:, stop:, data: {})
 <TabItem value="python" label="Python Syntax">
 
 ```python
-create_timeline_activity(name, kind, start, stop, data={})
+create_timeline_activity(name, kind, start, stop, data={}, approve_hazardous=False)
 ```
 
 </TabItem>
@@ -8876,6 +8878,7 @@ create_timeline_activity(name, kind, start, stop, data={})
 | start     | Start time of the activity. Time / datetime instance.                         |
 | stop      | Stop time of the activity. Time / datetime instance.                          |
 | data      | Hash / dict of data for COMMAND or SCRIPT type. Default is empty hash / dict. |
+| approve_hazardous | COMMAND only: approve the command if it is hazardous when it runs. Default false. |
 
 <Tabs groupId="script-language">
 <TabItem value="ruby" label="Ruby Example">
@@ -9080,6 +9083,59 @@ delete_timeline_activity("RubyTL", 1737132303, "cdb661b4-a65b-44e7-95e2-5e1dba80
 
 ```python
 delete_timeline_activity("PythonTL", 1737133108, "cddbf034-ccdd-4c36-91c2-2653a39b06a5")
+```
+
+</TabItem>
+</Tabs>
+
+### create_pass_activities
+
+Publish satellite pass windows onto a timeline as RESERVE activities. A pass occupies time on the calendar without executing anything, showing when the spacecraft is visible so commands and scripts can be scheduled inside it. The timeline is created if it does not exist. Run again against updated propagation, it replaces the passes in that range rather than duplicating them, and leaves the commands and scripts scheduled inside them alone. A pass already underway is skipped and reported, rather than failing the rest.
+
+<Tabs groupId="script-language">
+<TabItem value="ruby" label="Ruby Syntax">
+
+```ruby
+create_pass_activities(passes, timeline: 'PASSES', color: '#8E24AA', replace: true)
+```
+
+</TabItem>
+
+<TabItem value="python" label="Python Syntax">
+
+```python
+create_pass_activities(passes, timeline="PASSES", color="#8E24AA", replace=True)
+```
+
+</TabItem>
+</Tabs>
+
+| Parameter | Description |
+| --------- | ----------- |
+| passes    | Array / list of hashes / dicts, each with a start and a stop: a Time / datetime, an ISO 8601 string, or epoch seconds. Any other keys (satellite, ground_station, ...) are stored on the activity and shown in the calendar. |
+| timeline  | Timeline to publish onto, created if missing. Default PASSES. |
+| color     | Color of the timeline when it is created. |
+| replace   | Remove the RESERVE activities already in the range being published first. Default true. |
+
+Returns a hash / dict: `created` and `deleted`, the counts, and `skipped`, each pass skipped with its reason.
+
+<Tabs groupId="script-language">
+<TabItem value="ruby" label="Ruby Example">
+
+```ruby
+create_pass_activities([
+  {start: aos, stop: los, satellite: "SAT1", ground_station: "GS1"},
+]) #=> {"created"=>1, "deleted"=>0, "skipped"=>[]}
+```
+
+</TabItem>
+
+<TabItem value="python" label="Python Example">
+
+```python
+create_pass_activities([
+    {"start": aos, "stop": los, "satellite": "SAT1", "ground_station": "GS1"},
+])  # => {'created': 1, 'deleted': 0, 'skipped': []}
 ```
 
 </TabItem>

@@ -19,6 +19,10 @@
 #
 # This file may also be used under the terms of a commercial license
 # if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
 
 require 'openc3/topics/timeline_topic'
 require 'openc3/models/activity_model'
@@ -97,6 +101,11 @@ class ActivityController < ApplicationController
       hash['stop'] = DateTime.parse(hash['stop']).strftime('%s').to_i
       if hash['recurring'] and hash['recurring']['end']
         hash['recurring']['end'] = DateTime.parse(hash['recurring']['end']).strftime('%s').to_i
+      end
+      refused = record_hazardous_approval(hash, params[:approve_hazardous])
+      if refused
+        render json: { status: 'error', message: refused[1] }, status: refused[0]
+        return
       end
       model = @model_class.from_json(hash.symbolize_keys, name: params[:name], scope: params[:scope])
       model.create()
@@ -255,6 +264,11 @@ class ActivityController < ApplicationController
       hash['data']['username'] = username()
       hash['start'] = DateTime.parse(hash['start']).strftime('%s').to_i
       hash['stop'] = DateTime.parse(hash['stop']).strftime('%s').to_i
+      refused = record_hazardous_approval(hash, params[:approve_hazardous])
+      if refused
+        render json: { status: 'error', message: refused[1] }, status: refused[0]
+        return
+      end
       model.update(start: hash['start'], stop: hash['stop'], kind: hash['kind'], data: hash['data'])
       OpenC3::Logger.info(
         "Activity updated: #{params[:name]} #{hash}",
@@ -356,6 +370,11 @@ class ActivityController < ApplicationController
         name = hash.delete('name')
         hash['start'] = DateTime.parse(hash['start']).strftime('%s').to_i
         hash['stop'] = DateTime.parse(hash['stop']).strftime('%s').to_i
+        refused = record_hazardous_approval(hash, hash.delete('approve_hazardous'))
+        if refused
+          ret << { status: 'error', message: refused[1], input: input, err: refused[0] }
+          next
+        end
         model = @model_class.from_json(hash.symbolize_keys, name: name, scope: params[:scope])
         model.create()
         OpenC3::Logger.info(
@@ -426,5 +445,30 @@ class ActivityController < ApplicationController
       end
     end
     render json: ret
+  end
+
+  private
+
+  # A scheduled command that COSMOS marks hazardous is sent only if it was
+  # approved when it was scheduled (TimelineWorker#run_command). The approval is
+  # the server's to record: whatever a request puts in its place is dropped, and
+  # it is written only for a command activity whose request asks for it, by
+  # someone allowed to send that command. It names the command it approves, so
+  # changing the command, or rescheduling it, asks for a new one.
+  #
+  # @return [Array(Integer, String), nil] the status and message refusing it, or nil
+  def record_hazardous_approval(hash, approve)
+    hash['data'].delete('hazardous_approval')
+    return nil unless approve == true or approve == 'true'
+    command = hash['data']['command']
+    unless hash['kind'].to_s.downcase == 'command' and command.is_a?(String) and !command.strip.empty?
+      return [400, 'approve_hazardous is only for a command activity that has a command']
+    end
+    target_name = command.split(/\s+with\s+/i, 2)[0].split[0].to_s.upcase
+    unless authorization('cmd', target_name: target_name, perform_render: false)
+      return [403, "#{username()} is not authorized to send commands to #{target_name}"]
+    end
+    hash['data']['hazardous_approval'] = { 'by' => username(), 'at' => Time.now.utc.iso8601, 'command' => command }
+    return nil
   end
 end

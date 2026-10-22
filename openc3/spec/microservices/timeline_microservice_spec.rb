@@ -7,7 +7,10 @@ module OpenC3
   describe TimelineWorker do
     let(:timeline_name) { 'TEST_TIMELINE' }
     let(:scope) { 'DEFAULT' }
-    let(:logger) { Logger.new(STDOUT) }
+    # Ruby's own logger, into a string the tests can read. Inside module OpenC3,
+    # a bare Logger is OpenC3::Logger, whose argument is a level, not a device.
+    let(:log) { StringIO.new }
+    let(:logger) { ::Logger.new(log) }
     let(:queue) { Queue.new }
     let(:worker) { TimelineWorker.new(name: timeline_name, logger: logger, scope: scope, queue: queue) }
 
@@ -53,16 +56,64 @@ module OpenC3
         expect(activity.events.last['message']).to eq('interface disconnected')
       end
 
-      it 'resends a hazardous command with the check bypassed and records the approval' do
+      def hazardous
+        HazardousError.new.tap { |error| error.hazardous_description = 'will vent propellant' }
+      end
+
+      def approval(command)
+        { 'by' => 'operator', 'at' => '2031-04-16T01:02:00Z', 'command' => command }
+      end
+
+      it 'refuses a hazardous command that was not approved when it was scheduled' do
         activity = build_activity(kind: 'command', data: { 'command' => 'INST VENT' })
-        error = HazardousError.new
-        error.hazardous_description = 'will vent propellant'
-        expect(worker).to receive(:cmd).with('INST VENT', scope: scope).and_raise(error)
+        expect(worker).to receive(:cmd).with('INST VENT', scope: scope).and_raise(hazardous)
+        expect(worker).to_not receive(:cmd_no_hazardous_check)
+        worker.run_activity(activity)
+        expect(activity.fulfillment).to be false
+        expect(activity.events.last['event']).to eq('failed')
+        expect(activity.events.last['message']).to eq('hazardous command not approved when it was scheduled: will vent propellant')
+        expect(log.string).to include('refused hazardous command INST VENT')
+      end
+
+      it 'sends an approved hazardous command with the check bypassed, and records who approved it' do
+        activity = build_activity(kind: 'command', data: { 'command' => 'INST VENT', 'hazardous_approval' => approval('INST VENT') })
+        expect(worker).to receive(:cmd).with('INST VENT', scope: scope).and_raise(hazardous)
         expect(worker).to receive(:cmd_no_hazardous_check).with('INST VENT', scope: scope)
         worker.run_activity(activity)
         expect(activity.fulfillment).to be true
         expect(activity.events.last['event']).to eq('completed')
-        expect(activity.events.last['message']).to include('hazardous')
+        expect(activity.events.last['message']).to eq('INST VENT (hazardous, approved by operator at 2031-04-16T01:02:00Z)')
+      end
+
+      it 'refuses a hazardous command whose approval names another command' do
+        activity = build_activity(kind: 'command', data: {
+          'command' => 'INST VENT with AMOUNT 100',
+          'hazardous_approval' => approval('INST VENT with AMOUNT 1'),
+        })
+        expect(worker).to receive(:cmd).and_raise(hazardous)
+        expect(worker).to_not receive(:cmd_no_hazardous_check)
+        worker.run_activity(activity)
+        expect(activity.fulfillment).to be false
+        expect(activity.events.last['message']).to start_with('hazardous command not approved')
+      end
+
+      it 'refuses a hazardous command whose approval is not a record of one' do
+        activity = build_activity(kind: 'command', data: { 'command' => 'INST VENT', 'hazardous_approval' => true })
+        expect(worker).to receive(:cmd).and_raise(hazardous)
+        expect(worker).to_not receive(:cmd_no_hazardous_check)
+        worker.run_activity(activity)
+        expect(activity.fulfillment).to be false
+        expect(activity.events.last['event']).to eq('failed')
+        expect(activity.events.last['message']).to start_with('hazardous command not approved')
+      end
+
+      it 'sends an approved command that is not hazardous with the check in place' do
+        activity = build_activity(kind: 'command', data: { 'command' => 'INST ABORT', 'hazardous_approval' => approval('INST ABORT') })
+        expect(worker).to receive(:cmd).with('INST ABORT', scope: scope)
+        expect(worker).to_not receive(:cmd_no_hazardous_check)
+        worker.run_activity(activity)
+        expect(activity.fulfillment).to be true
+        expect(activity.events.last['message']).to eq('INST ABORT')
       end
 
       it 'fails a command activity that carries no command' do
@@ -94,7 +145,7 @@ module OpenC3
   describe TimelineScheduler do
     let(:timeline_name) { 'TEST_TIMELINE' }
     let(:scope) { 'DEFAULT' }
-    let(:logger) { Logger.new(STDOUT) }
+    let(:logger) { ::Logger.new(StringIO.new) }
     let(:queue) { Queue.new }
     let(:scheduler) { TimelineScheduler.new(name: timeline_name, logger: logger, scope: scope, queue: queue) }
 
@@ -103,8 +154,9 @@ module OpenC3
       TimelineModel.new(name: timeline_name, scope: scope, color: '#FF0000').create
     end
 
-    # Builds a model directly rather than through create() so activities can be
-    # placed in the past, which ActivityModel deliberately refuses to store.
+    # Builds a model directly rather than through create(), so nothing is stored.
+    # ActivityModel refuses a start more than START_GRACE_SECONDS in the past even
+    # here, so a later time is made by moving the clock, not the activity.
     def activity_at(offset, uuid: SecureRandom.uuid)
       start = Time.now.to_i + offset
       ActivityModel.new(
@@ -113,6 +165,7 @@ module OpenC3
         start: start,
         stop: start + 60,
         kind: 'reserve',
+        data: {},
         uuid: uuid
       )
     end
@@ -156,11 +209,13 @@ module OpenC3
         expect(queue.size).to eq(2)
       end
 
-      it 'marks an activity missed while the microservice was down' do
-        missed = activity_at(-600)
+      it 'marks an activity missed when it is dispatched past its grace window' do
+        missed = activity_at(1)
         allow(ActivityModel).to receive(:activities).and_return([missed])
         allow(missed).to receive(:commit)
         scheduler.refresh
+        later = Time.at(missed.start + TimelineScheduler::GRACE_SECONDS + 1)
+        allow(Time).to receive(:now).and_return(later)
         scheduler.dispatch_due
         expect(queue.size).to eq(0)
         expect(missed).to have_received(:commit)
