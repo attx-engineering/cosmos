@@ -259,6 +259,34 @@ const COMMAND_NAME = 'SET_VALUE'
 const MAX_HISTORY = 20
 // Where the last-loaded graph tree is cached so it survives page reloads.
 const TREE_STORAGE_KEY = 'simcontrol_graph_tree'
+// The graph_tree.json this tool reads: WarpTwin writes {"schemaVersion": 1, "root": <the tree>}.
+const TREE_SCHEMA_VERSION = 1
+
+// The tree a graph_tree.json holds, or an Error saying why it holds none this tool reads. A versioned document of
+// another version is refused, rather than read as what it may not be; one with no version, as WarpTwin wrote before
+// it versioned the file, is the tree itself.
+function treeOf(contents) {
+  if (contents === null || typeof contents !== 'object' || Array.isArray(contents)) {
+    return new Error('it is not a graph_tree.json: no tree in it')
+  }
+  if ('schemaVersion' in contents) {
+    if (contents.schemaVersion !== TREE_SCHEMA_VERSION) {
+      return new Error(
+        `its schemaVersion is ${JSON.stringify(contents.schemaVersion)}, and Sim Control reads version ` +
+          `${TREE_SCHEMA_VERSION}: a newer Sim Control reads it`,
+      )
+    }
+    contents = contents.root
+  }
+  if (
+    contents === null ||
+    typeof contents !== 'object' ||
+    typeof contents.address !== 'string'
+  ) {
+    return new Error('it is not a graph_tree.json: its tree names no address')
+  }
+  return contents
+}
 
 export default {
   components: {
@@ -428,7 +456,12 @@ export default {
       try {
         const raw = localStorage.getItem(TREE_STORAGE_KEY)
         if (raw) {
-          this.tree = JSON.parse(raw)
+          const tree = treeOf(JSON.parse(raw))
+          if (tree instanceof Error) {
+            localStorage.removeItem(TREE_STORAGE_KEY)
+            return false
+          }
+          this.tree = tree
           this.treeSource = 'cached'
           this.treeStatus = ''
           return true
@@ -446,20 +479,26 @@ export default {
       if (!chosen) return
       const reader = new FileReader()
       reader.onload = () => {
+        let tree
         try {
-          const parsed = JSON.parse(reader.result)
-          this.tree = parsed
-          this.treeSource = 'file'
-          this.treeStatus = ''
-          try {
-            localStorage.setItem(TREE_STORAGE_KEY, reader.result)
-          } catch {
-            // Over quota -- the tree still works this session, just not cached.
-          }
+          tree = treeOf(JSON.parse(reader.result))
         } catch (error) {
+          tree = new Error(`it is not JSON: ${error.message}`)
+        }
+        if (tree instanceof Error) {
           this.tree = null
           this.treeSource = ''
-          this.treeStatus = `Could not parse that file as JSON: ${error.message}`
+          this.treeStatus = `Could not use ${chosen.name}: ${tree.message}`
+          this.$notify.caution({ title: 'Graph tree not loaded', body: this.treeStatus })
+          return
+        }
+        this.tree = tree
+        this.treeSource = 'file'
+        this.treeStatus = ''
+        try {
+          localStorage.setItem(TREE_STORAGE_KEY, reader.result)
+        } catch {
+          // Over quota -- the tree still works this session, just not cached.
         }
       }
       reader.readAsText(chosen)
@@ -494,7 +533,12 @@ export default {
             },
           )
           if (response?.data?.contents) {
-            this.tree = JSON.parse(atob(response.data.contents))
+            const tree = treeOf(JSON.parse(atob(response.data.contents)))
+            if (tree instanceof Error) {
+              this.treeStatus = `The ${TARGET_NAME} target's graph_tree.json was not used: ${tree.message}`
+              return
+            }
+            this.tree = tree
             this.treeSource = `${TARGET_NAME} target`
             this.treeStatus = ''
             return
