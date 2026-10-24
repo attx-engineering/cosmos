@@ -95,15 +95,16 @@ fi
 
 if [ "${OPENC3_CLOUD}" == "local" ]; then
     ruby /openc3/bin/openc3cli initbuckets || exit 1
-    mc alias set openc3minio "${OPENC3_BUCKET_URL}" ${OPENC3_BUCKET_USERNAME} ${OPENC3_BUCKET_PASSWORD} || exit 1
+    # "--" ends mc's flags, so a secret that begins with "-" is taken as itself (test/init_mc_secrets.sh).
+    mc alias set -- openc3minio "${OPENC3_BUCKET_URL}" "${OPENC3_BUCKET_USERNAME}" "${OPENC3_BUCKET_PASSWORD}" || exit 1
     # Create new canned policy by name script using script-runner.json policy file.
     mc admin policy create openc3minio script /openc3/minio/script-runner.json || exit 1
     # Create a new user scriptrunner on MinIO use mc admin user.
-    mc admin user add openc3minio ${OPENC3_SR_BUCKET_USERNAME} ${OPENC3_SR_BUCKET_PASSWORD} || exit 1
+    mc admin user add -- openc3minio "${OPENC3_SR_BUCKET_USERNAME}" "${OPENC3_SR_BUCKET_PASSWORD}" || exit 1
     # Once the user is successfully created you can now apply the getonly policy for this user.
     # "|| true" is required on subsequent startups due to the following error that is thrown:
     # mc: <ERROR> Unable to make user/group policy association. The specified policy change is already in effect. (Specified policy update has no net effect).
-    mc admin policy attach openc3minio script --user=${OPENC3_SR_BUCKET_USERNAME} || true
+    mc admin policy attach openc3minio script "--user=${OPENC3_SR_BUCKET_USERNAME}" || true
 fi
 
 ruby /openc3/bin/openc3cli removeenterprise || exit 1
