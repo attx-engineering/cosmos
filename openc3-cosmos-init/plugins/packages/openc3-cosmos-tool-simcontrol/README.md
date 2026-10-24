@@ -7,7 +7,7 @@ as `.exc.spacecraft.params.mass` and a value such as `5`, press Send, and the
 tool sends this JSON out the simulation's own port:
 
 ```json
-{ "address": ".exc.spacecraft.params.mass", "value": 5 }
+{ "address": ".exc.spacecraft.params.mass", "value": 5, "sequence": 7 }
 ```
 
 The value is sent as its natural JSON type: `5` is a number, `5.5` is a number,
@@ -19,10 +19,13 @@ logs like any other command.
 
 ## What the simulation accepts
 
-The port is **write-only**: the datagram is fire-and-forget and the simulation
-never replies. A "Sent" status here means the JSON left COSMOS, **not** that the
-simulation accepted it. If an address or value is rejected, the simulation logs
-a warning on its own side and drops the datagram — nothing comes back to COSMOS.
+The simulation **replies to each value** at the port it came from, which the
+`SIM` target's interface reads as its `REPLY` packet: whether it set the value,
+and why not when it did not, with the value's `sequence`, which the tool numbers
+each value with. **Recent** shows each value **Set**, **Refused** with the
+simulation's reason, or **No reply** when nothing answered within five seconds:
+the simulation is not running or not connected, or the `SIM` block in the
+plugin's `plugin.txt` names no `sim_reply_port`, so its interface reads nothing.
 
 **Value types.** Send a scalar JSON value; the simulation maps it onto the
 addressed signal's type:
@@ -59,22 +62,20 @@ signal, the Value field shows the **expected type** and auto-fills a template of
 the right type and shape (using the signal's current value from the dump), ready
 to edit — it never overwrites a value you've typed yourself.
 
-To enable it:
+The simulation writes `graph_tree.json` into its output directory (alongside
+`sim_data.json`) on its first step, whenever `write-data-json` is on, which is
+the default. The tool finds a tree in this order:
 
-1. Run the simulation. On the first step it writes `graph_tree.json` into its
-   output directory (alongside `sim_data.json`) whenever `write-data-json` is
-   on, which is the default.
-2. In the tool, use **Graph tree file** to pick that `graph_tree.json`. It loads
-   immediately and is cached in the browser, so it survives reloads until you
-   load a newer one. Because the tree changes as the sim's models change, this
-   is the intended workflow: re-dump, re-pick, done — no plugin rebuild or
-   upload. Use the field's clear button to forget it.
+1. **The running simulation's**, the `SIM` target's `graph_tree.json` in
+   `targets_modified`, where WarpWare's hub puts each connected run's (`hub
+   run`). The tool asks for it again when its window is come back to, so a run
+   started after it opened is picked up.
+2. **One picked by hand**, under **Graph tree file**, which serves the session;
+   it is cached in the browser, and used when no run has given a tree.
+3. A `graph_tree.json` packaged in the `SIM` target, when there is one.
 
-Optionally, you can instead bake a `graph_tree.json` into the `SIM` target
-(e.g. `openc3-cosmos-warplink/targets/SIM/graph_tree.json`) and (re)install the
-plugin; the tool falls back to that packaged copy when nothing has been loaded
-in the browser. Either way, if no tree is available the address field still
-works as free text — autocomplete is simply off, and the field hint says so.
+If no tree is available the address field still works as free text —
+autocomplete is simply off, and the field hint says so.
 
 ## Getting Started
 

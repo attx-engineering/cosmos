@@ -30,14 +30,17 @@
 # no CCSDS header, no framing and no CRC: the datagram is exactly the JSON
 # object below.
 #
-#   {"address":".exc.spacecraft.params.mass","value":5}
+#   {"address":".exc.spacecraft.params.mass","value":5,"sequence":7}
+#
+# SEQUENCE is the sender's own: the simulation echoes it in its reply, the
+# REPLY packet, so a sender can tell which value a reply answers.
 #
 # VALUE is an ANY parameter, so it goes out as whatever JSON type it parses as:
 # 5 is a number, 5.5 is a number, true is a boolean, and anything that is not
 # valid JSON is sent as a string.
 #
-# What the simulation accepts (this port is write-only - it never replies, so a
-# rejected value is logged sim-side and dropped, not NAKed back here):
+# What the simulation accepts (it replies to each value, accepted or not, at the
+# port the value came from, read by this target's interface as REPLY):
 #   - number  -> any numeric signal (integer or float)
 #   - boolean -> a boolean signal
 #   - string  -> a string signal, applied verbatim; also how a vector/matrix
@@ -53,8 +56,10 @@
 
 COMMAND SIM SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
   ACCESSOR JsonAccessor
-  TEMPLATE '{"address":"","value":0}'
+  TEMPLATE '{"address":"","value":0,"sequence":0}'
   APPEND_PARAMETER ADDRESS 2048 STRING "" "Simulation address, e.g. .exc.spacecraft.params.mass"
     KEY $.address
   APPEND_PARAMETER VALUE 64 ANY 0 "Value to set, sent as its natural JSON type"
     KEY $.value
+  APPEND_PARAMETER SEQUENCE 32 UINT 0 4294967295 0 "The sender's own number, echoed in the simulation's reply"
+    KEY $.sequence
