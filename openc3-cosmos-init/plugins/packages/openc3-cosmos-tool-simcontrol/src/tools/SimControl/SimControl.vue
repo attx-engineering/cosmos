@@ -664,11 +664,14 @@ export default {
           this.status = `Sent ${this.preview}`
           this.statusError = false
           this.addHistory(address, value, true, null, sequence)
-          this.$notify.normal({
-            title: `Set ${address}`,
-            body: `${JSON.stringify(value)}`,
-            severity: 'success',
-          })
+          // Numbered, the simulation's reply says whether it was set (lookForReplies); otherwise only that it was sent.
+          if (sequence === undefined) {
+            this.$notify.normal({
+              title: `Sent ${address}`,
+              body: `${JSON.stringify(value)}`,
+              severity: 'success',
+            })
+          }
         })
         .catch((error) => {
           const message = error.message || error.name || 'unknown error'
@@ -722,13 +725,25 @@ export default {
         if (entry) {
           entry.reply = item.ACCEPTED === true ? 'accepted' : 'refused'
           entry.replyError = item.ERROR ?? ''
+          this.notifyReply(entry)
         }
       } catch {
         // No reply read this time; the value goes on waiting.
       }
       const now = Date.now()
       for (const e of waiting) {
-        if (e.reply === 'waiting' && now - e.sentAt > REPLY_WAIT_MS) e.reply = 'none'
+        if (e.reply === 'waiting' && now - e.sentAt > REPLY_WAIT_MS) {
+          e.reply = 'none'
+          this.notifyReply(e)
+        }
+      }
+    },
+    // What the simulation said of a value, as a notification: set, refused with its reason, or no reply.
+    notifyReply(entry) {
+      if (entry.reply === 'accepted') {
+        this.$notify.normal({ title: `Set ${entry.address}`, body: entry.value, severity: 'success' })
+      } else {
+        this.$notify.caution({ title: `${entry.address} was not set`, body: this.resultText(entry) })
       }
     },
     resultText(entry) {
