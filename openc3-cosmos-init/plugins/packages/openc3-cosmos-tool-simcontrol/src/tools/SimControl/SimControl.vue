@@ -61,10 +61,11 @@
           {{ setupError }}
         </v-alert>
         <!--
-          Load the sim's graph_tree.json straight into the tool. It changes
-          often, so this avoids any plugin rebuild/upload: dump the tree, pick
-          it here, and autocomplete updates immediately. The parsed tree is kept
-          in localStorage so it survives reloads until you load a newer one.
+          The running simulation's graph_tree.json comes from WarpWare's hub,
+          which puts each connected run's in COSMOS as the SIM target's: it is
+          used first, and asked for again when this window is come back to. A
+          file picked here serves this session, and is cached in localStorage
+          for when no run has given a tree.
         -->
         <v-row dense class="mb-1">
           <v-col cols="12" md="8">
@@ -227,8 +228,8 @@
               <td>
                 <code>{{ entry.value }}</code>
               </td>
-              <td :class="entry.success ? '' : 'text-error'">
-                {{ entry.success ? 'Sent' : entry.error }}
+              <td :class="resultClass(entry)" data-test="sim-result">
+                {{ resultText(entry) }}
               </td>
               <td class="text-right">
                 <v-btn
@@ -256,6 +257,14 @@ import { TopBar } from '@openc3/vue-common/components'
 // ships one). The interface mapped to the target owns the simulation port.
 const TARGET_NAME = 'SIM'
 const COMMAND_NAME = 'SET_VALUE'
+// The simulation's reply to each value, read by the SIM target's interface; a target without it reads none.
+const REPLY_PACKET = 'REPLY'
+// How long a value waits for its reply before it is said to have had none.
+const REPLY_WAIT_MS = 5000
+// How often the reply is looked for while a value waits for one.
+const REPLY_LOOK_MS = 250
+// The run's tree is asked for again on focus at most this often.
+const TREE_LOOK_MS = 5000
 const MAX_HISTORY = 20
 // Where the last-loaded graph tree is cached so it survives page reloads.
 const TREE_STORAGE_KEY = 'simcontrol_graph_tree'
@@ -309,6 +318,14 @@ export default {
       tree: null,
       treeStatus: '',
       treeSource: '',
+      // The run's tree as last read from the SIM target, so a read finding the same one changes nothing.
+      treeText: '',
+      treeLookedAt: 0,
+      // Whether the SIM target reads the simulation's replies (its REPLY packet), and each value's own number, which
+      // the reply echoes; it starts anywhere, so a reply to another session's value is never taken for one of these.
+      replies: false,
+      sequence: Math.floor(Math.random() * 1000000),
+      replyTimer: null,
       showSuggestions: false,
       // The last value we auto-filled from a signal's template, so we can
       // replace it when the address changes without clobbering a value the
@@ -443,11 +460,31 @@ export default {
       .catch((error) => {
         this.setupError = `Unable to look up targets: ${error.message}`
       })
-    // Prefer a tree the user loaded before (cached); otherwise fall back to a
-    // graph_tree.json baked into the SIM target, if one happens to be there.
-    if (!this.loadStoredTree()) {
+    // Whether the SIM target reads the simulation's replies: a target without its REPLY packet sends values alone.
+    this.api
+      .get_all_tlm_names(TARGET_NAME)
+      .then((names) => {
+        this.replies = names.includes(REPLY_PACKET)
+      })
+      .catch(() => {
+        this.replies = false
+      })
+    // The running simulation's tree, which the hub puts in COSMOS as the SIM target's, comes first; else the tree
+    // loaded here before, cached in this browser.
+    this.loadGraphTree().then((loaded) => {
+      if (!loaded) this.loadStoredTree()
+    })
+    // A run started since this opened has put its tree there: asked for again when this window is come back to,
+    // unless a file was picked here for this session.
+    this.onFocus = () => {
+      if (this.treeSource === 'file' || Date.now() - this.treeLookedAt < TREE_LOOK_MS) return
       this.loadGraphTree()
     }
+    window.addEventListener('focus', this.onFocus)
+  },
+  beforeUnmount() {
+    window.removeEventListener('focus', this.onFocus)
+    clearInterval(this.replyTimer)
   },
   methods: {
     // Restore the last-loaded tree from localStorage. Returns whether one was
@@ -515,11 +552,11 @@ export default {
       }
       this.treeStatus = 'Load a graph_tree.json to enable address autocomplete.'
     },
-    // Fetch the sim's graph-tree dump from the SIM target directory. It is a
-    // plain target file (the user copies graph_tree.json in), so it is read via
-    // the storage download endpoint, trying targets_modified (an edit made in
-    // COSMOS) before the packaged targets copy.
+    // Fetch the running simulation's tree from the SIM target's folder, where the hub puts each connected run's: a
+    // plain target file, read via the storage download endpoint, trying targets_modified (where the hub, and an edit
+    // made in COSMOS, put it) before the packaged targets copy. Resolves to whether a tree is in use from there.
     async loadGraphTree() {
+      this.treeLookedAt = Date.now()
       const scope = window.openc3Scope || 'DEFAULT'
       const relativePath = `${TARGET_NAME}/graph_tree.json`
       for (const area of ['targets_modified', 'targets']) {
@@ -533,22 +570,28 @@ export default {
             },
           )
           if (response?.data?.contents) {
-            const tree = treeOf(JSON.parse(atob(response.data.contents)))
+            const text = atob(response.data.contents)
+            if (text === this.treeText && this.tree) return true
+            const tree = treeOf(JSON.parse(text))
             if (tree instanceof Error) {
-              this.treeStatus = `The ${TARGET_NAME} target's graph_tree.json was not used: ${tree.message}`
-              return
+              this.treeStatus = `The run's graph_tree.json was not used: ${tree.message}`
+              return false
             }
             this.tree = tree
-            this.treeSource = `${TARGET_NAME} target`
+            this.treeText = text
+            this.treeSource = "the run's"
             this.treeStatus = ''
-            return
+            return true
           }
         } catch {
           // Not in this area; fall through and try the next one.
         }
       }
-      this.treeStatus =
-        'Load a graph_tree.json above to enable address autocomplete.'
+      if (!this.tree) {
+        this.treeStatus =
+          'Load a graph_tree.json above to enable address autocomplete.'
+      }
+      return false
     },
     // Show the suggestion menu when the tree is loaded and there is at least
     // one candidate for what's currently typed.
@@ -607,18 +650,20 @@ export default {
       this.sending = true
       const address = this.address.trim()
       const value = this.parsedValue
+      // Numbered, when the simulation's replies are read, so its reply is matched to this value.
+      const sequence = this.replies ? (this.sequence = (this.sequence + 1) % 4294967296) : undefined
       this.api
         .cmd(
           TARGET_NAME,
           COMMAND_NAME,
-          { ADDRESS: address, VALUE: value },
+          sequence === undefined ? { ADDRESS: address, VALUE: value } : { ADDRESS: address, VALUE: value, SEQUENCE: sequence },
           // Handled below, so don't let the interceptor pop its own error
           { 'Ignore-Errors': '428 500' },
         )
         .then(() => {
           this.status = `Sent ${this.preview}`
           this.statusError = false
-          this.addHistory(address, value, true)
+          this.addHistory(address, value, true, null, sequence)
           this.$notify.normal({
             title: `Set ${address}`,
             body: `${JSON.stringify(value)}`,
@@ -644,15 +689,68 @@ export default {
       this.value = entry.value
       this.send()
     },
-    addHistory(address, value, success, error = null) {
+    addHistory(address, value, success, error = null, sequence = undefined) {
       this.history.unshift({
         time: new Date().toLocaleTimeString(),
         address,
         value: JSON.stringify(value),
         success,
         error,
+        // The simulation's reply: waited for while numbered and sent; then accepted, refused, or none.
+        sequence,
+        sentAt: Date.now(),
+        reply: success && sequence !== undefined ? 'waiting' : undefined,
+        replyError: '',
       })
       this.history = this.history.slice(0, MAX_HISTORY)
+      if (this.history.some((e) => e.reply === 'waiting') && !this.replyTimer) {
+        this.replyTimer = setInterval(() => this.lookForReplies(), REPLY_LOOK_MS)
+      }
+    },
+    // The latest reply, matched to the value waiting for it by its number; a value waiting too long had none.
+    async lookForReplies() {
+      const waiting = this.history.filter((e) => e.reply === 'waiting')
+      if (!waiting.length) {
+        clearInterval(this.replyTimer)
+        this.replyTimer = null
+        return
+      }
+      try {
+        const packet = await this.api.get_tlm_packet(TARGET_NAME, REPLY_PACKET, 'CONVERTED')
+        const item = Object.fromEntries((packet ?? []).map(([name, value]) => [name, value]))
+        const entry = waiting.find((e) => e.sequence === item.SEQUENCE && e.address === item.ADDRESS)
+        if (entry) {
+          entry.reply = item.ACCEPTED === true ? 'accepted' : 'refused'
+          entry.replyError = item.ERROR ?? ''
+        }
+      } catch {
+        // No reply read this time; the value goes on waiting.
+      }
+      const now = Date.now()
+      for (const e of waiting) {
+        if (e.reply === 'waiting' && now - e.sentAt > REPLY_WAIT_MS) e.reply = 'none'
+      }
+    },
+    resultText(entry) {
+      if (!entry.success) return entry.error
+      switch (entry.reply) {
+        case 'waiting':
+          return 'Sent, waiting for the simulation'
+        case 'accepted':
+          return 'Set'
+        case 'refused':
+          return `Refused: ${entry.replyError || 'the simulation gave no reason'}`
+        case 'none':
+          return 'No reply: the simulation is not running or not connected, or SIM reads no replies (its plugin.txt block names no sim_reply_port)'
+        default:
+          return 'Sent'
+      }
+    },
+    resultClass(entry) {
+      if (!entry.success || entry.reply === 'refused') return 'text-error'
+      if (entry.reply === 'none') return 'text-warning'
+      if (entry.reply === 'accepted') return 'text-success'
+      return ''
     },
     clear() {
       this.history = []
