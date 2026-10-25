@@ -1,0 +1,51 @@
+# Copyright 2022 Ball Aerospace & Technologies Corp.
+# All Rights Reserved.
+#
+# This program is free software; you can modify and/or redistribute it
+# under the terms of the GNU Affero General Public License
+# as published by the Free Software Foundation; version 3 with
+# attribution addendums as found in the LICENSE.txt
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# Modified by OpenC3, Inc.
+# All changes Copyright 2025, OpenC3, Inc.
+# All Rights Reserved
+#
+# This file may also be used under the terms of a commercial license
+# if purchased from OpenC3, Inc.
+#
+# Modified by ATTX, Inc.
+# All changes Copyright 2026, ATTX, Inc.
+# All Rights Reserved
+
+# ##############################################################################
+# The simulation's reply to a value set (SIM)
+#
+# The simulation answers each SET_VALUE at the port it came from, which is the
+# interface's read port, with one JSON object:
+#
+#   {"schemaVersion":1,"address":".exc.spacecraft.params.mass","accepted":true,"sequence":7}
+#   {"schemaVersion":1,"address":".exc.nope","accepted":false,"error":"...","sequence":8}
+#
+# ERROR is there only when it refused the value, SEQUENCE only when the value
+# carried one.  This target is hand written, as SET_VALUE is.
+# ##############################################################################
+
+TELEMETRY SIM REPLY BIG_ENDIAN "The simulation's reply to a value set: whether it set it, and why not"
+  ACCESSOR JsonAccessor
+  # Template is not required for telemetry; it shows the shape.
+  TEMPLATE '{"schemaVersion":1,"address":"","accepted":true,"sequence":0}'
+  APPEND_ID_ITEM SCHEMA_VERSION 32 INT 1 "The reply's version"
+    KEY $.schemaVersion
+  APPEND_ITEM ADDRESS 2048 STRING "The address the value was for"
+    KEY $.address
+  APPEND_ITEM ACCEPTED 8 BOOL "Whether the simulation set the value"
+    KEY $.accepted
+  APPEND_ITEM ERROR 2048 STRING "Why the simulation did not set it, when it did not"
+    KEY $.error
+  APPEND_ITEM SEQUENCE 32 UINT "The value's SEQUENCE, when it carried one"
+    KEY $.sequence

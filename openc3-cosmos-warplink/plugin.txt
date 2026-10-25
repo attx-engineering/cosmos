@@ -43,14 +43,16 @@
 # ---------------------------------------------------------------------------
 # SIM - simulation value injection
 #
-# Not a WarpOS build target: this is a send-only JSON channel used by the Sim
-# Control tool to set simulation parameters, on its own port so it never mixes
-# with flight software command traffic.  No read port - the simulation does not
-# reply on this socket.
+# Not a WarpOS build target: the JSON channel the Sim Control tool sets a
+# simulation's values through, on its own ports so it never mixes with flight
+# software command traffic.  The simulation replies to each value at the port
+# it came from, so sim_reply_port is both the interface's write source port and
+# its read port: one socket, which sends each value and reads its reply.
 # ---------------------------------------------------------------------------
 VARIABLE sim_enable            false
 VARIABLE sim_host              host.docker.internal
 VARIABLE sim_write_port        5009
+VARIABLE sim_reply_port        5010
 
 # ---------------------------------------------------------------------------
 # FLIGHT_BOARD
@@ -80,9 +82,10 @@ VARIABLE cfdp_block_size        256
 <% if sim_enable.to_s.strip.downcase == "true" %>
 TARGET SIM SIM
 
-# Write only UDP - read_port is None, so COSMOS never listens on this socket.
+# Sends from sim_reply_port and reads there: the read port is the write source
+# port, so COSMOS uses one socket, and the simulation's reply comes back to it.
 # Raw JSON datagrams: no CRC and no check_pattern protocols here on purpose.
-INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_write_port %> None None None 128 10.0 None # Simulation JSON UDP
+INTERFACE SIM_INT openc3/interfaces/udp_interface.py <%= sim_host %> <%= sim_write_port %> <%= sim_reply_port %> <%= sim_reply_port %> None 128 10.0 None # Simulation JSON UDP
   MAP_TARGET SIM
 <% end %>
 
