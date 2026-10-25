@@ -166,6 +166,7 @@
               class="mr-1 mb-1"
               :disabled="!!setupError"
               :data-test="`sim-example-${ex.label}`"
+              :title="ex.title"
               @click="value = ex.value"
             >
               {{ ex.label }}:&nbsp;<code>{{ ex.value }}</code>
@@ -335,17 +336,23 @@ export default {
       // their JSON type; text and the vector/quaternion/matrix/array forms are
       // not valid JSON, so they fall through to being sent as a string -- which
       // is exactly what the simulation expects for those (a JSON array like
-      // [1,2,3] would be rejected). The bracket forms match clockwerk's own
+      // [1,2,3] would be rejected). The bracket forms match WarpOS's own
       // string format: a column vector/quaternion is [[a][b]...], a matrix is
       // [[row][row]...] with commas inside each row, and a plain array is a bare
-      // comma-separated list.
+      // comma-separated list. WarpOS's quaternions are scalar first, so the
+      // quaternion example is the identity, [[w][x][y][z]] = [[1][0][0][0]].
       valueExamples: [
         { label: 'number', value: '5' },
         { label: 'decimal', value: '5.5' },
         { label: 'boolean', value: 'true' },
         { label: 'string', value: 'NADIR' },
         { label: 'vector', value: '[[1][2][3]]' },
-        { label: 'quaternion', value: '[[0][0][0][1]]' },
+        {
+          label: 'quaternion',
+          value: '[[1][0][0][0]]',
+          title:
+            'The identity. WarpOS orders a quaternion scalar first: [[w][x][y][z]]',
+        },
         { label: 'matrix', value: '[[1,2,3][4,5,6][7,8,9]]' },
         { label: 'array', value: '1,2,3' },
       ],
