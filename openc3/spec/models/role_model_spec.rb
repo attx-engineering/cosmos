@@ -56,7 +56,7 @@ module OpenC3
       end
 
       it 'excludes the target regardless of case' do
-        expect(operator.allow?(permission: 'cmd', target_name: 'sim')).to be false
+        expect(operator.allow?(permission: 'cmd', target_name: 'sim_control')).to be false
       end
 
       it 'cannot open the sim control tool' do

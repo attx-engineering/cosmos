@@ -72,13 +72,13 @@ module OpenC3
 
     describe 'granting' do
       it 'authorizes a role that allows the permission' do
-        expect(auth(token_for(['admin']), 'cmd', 'SIM')).to eq('alice')
+        expect(auth(token_for(['admin']), 'cmd', 'SIM_CONTROL')).to eq('alice')
         expect(auth(token_for(['operator']), 'cmd', 'SAT1')).to eq('alice')
         expect(auth(token_for(['viewer']), 'tlm', 'SAT1')).to eq('alice')
       end
 
       it 'combines multiple roles additively' do
-        expect(auth(token_for(%w(viewer admin)), 'cmd', 'SIM')).to eq('alice')
+        expect(auth(token_for(%w(viewer admin)), 'cmd', 'SIM_CONTROL')).to eq('alice')
       end
 
       it 'accepts a Bearer prefix' do
@@ -88,7 +88,7 @@ module OpenC3
 
     describe 'denying' do
       it 'refuses an operator commanding the simulation target' do
-        expect { auth(token_for(['operator']), 'cmd', 'SIM') }.to raise_error(ForbiddenError)
+        expect { auth(token_for(['operator']), 'cmd', 'SIM_CONTROL') }.to raise_error(ForbiddenError)
       end
 
       it 'refuses a viewer commanding or running scripts' do
@@ -96,8 +96,8 @@ module OpenC3
         expect { auth(token_for(['viewer']), 'script_run') }.to raise_error(ForbiddenError)
       end
 
-      it 'still refuses SIM when the extra role does not lift the exclusion' do
-        expect { auth(token_for(%w(operator viewer)), 'cmd', 'SIM') }.to raise_error(ForbiddenError)
+      it 'still refuses SIM_CONTROL when the extra role does not lift the exclusion' do
+        expect { auth(token_for(%w(operator viewer)), 'cmd', 'SIM_CONTROL') }.to raise_error(ForbiddenError)
       end
 
       # A role the identity provider knows about but COSMOS has no definition
@@ -141,11 +141,11 @@ module OpenC3
 
     describe 'service account' do
       it 'authorizes internal callers presenting the service password' do
-        expect(auth('svc-secret', 'cmd', 'SIM')).to eq('system')
+        expect(auth('svc-secret', 'cmd', 'SIM_CONTROL')).to eq('system')
       end
 
       it 'does not accept a wrong service password' do
-        expect { auth('svc-wrong', 'cmd', 'SIM') }.to raise_error(AuthError)
+        expect { auth('svc-wrong', 'cmd', 'SIM_CONTROL') }.to raise_error(AuthError)
       end
     end
 
@@ -154,7 +154,7 @@ module OpenC3
         result = Rbac.effective_permissions(token: token_for(['operator']), scope: scope)
         expect(result['roles']).to eq(['operator'])
         expect(result['permissions']).to include('cmd')
-        expect(result['excluded_targets']).to eq(['SIM'])
+        expect(result['excluded_targets']).to eq(['SIM_CONTROL'])
         expect(result['excluded_tools']).to eq(['simcontrol'])
       end
 
