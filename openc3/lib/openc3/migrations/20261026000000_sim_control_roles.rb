@@ -26,7 +26,7 @@ module OpenC3
   class SimControlRoles < Migration
     def self.renamed(list)
       return list unless list.is_a?(Array) && list.include?('SIM')
-      list.map { |target| target == 'SIM' ? 'SIM_CONTROL' : target }.uniq
+      list # MUTANT: the rename removed
     end
 
     def self.run
