@@ -46,8 +46,8 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 RUN pnpm build:common
 
 # Copy in helper scripts for building
-COPY ./plugins/docker-package-build.sh ./plugins/eslint.config.mjs ./plugins/.nycrc ./
-RUN chmod +x ./docker-package-build.sh
+COPY ./plugins/docker-package-build.sh ./plugins/gem-version.sh ./plugins/eslint.config.mjs ./plugins/.nycrc ./
+RUN chmod +x ./docker-package-build.sh ./gem-version.sh
 
 FROM openc3-frontend-tmp AS openc3-tmp1
 COPY ./plugins/packages/openc3-tool-base/ packages/openc3-tool-base/

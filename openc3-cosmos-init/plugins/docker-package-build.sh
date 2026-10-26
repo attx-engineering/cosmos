@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+HERE=$(cd "$(dirname "$0")" && pwd)
 PLUGINS="/openc3/plugins"
 GEMS="/openc3/plugins/gems/"
 PACKAGES="packages"
@@ -21,7 +22,11 @@ echo "--- packageBuild $1 pnpm run build"
 pnpm run build
 echo "=== packageBuild $1 pnpm run build complete"
 echo "--- packageBuild $1 rake build"
-rake build VERSION=${OPENC3_RELEASE_VERSION}
+# COSMOS's release, then a number made from the files the gem holds, so an installation upgrades the tool exactly when
+# it has changed (see gem-version.sh).
+GEM_VERSION=$("${HERE}/gem-version.sh" . "${OPENC3_RELEASE_VERSION}")
+echo "--- packageBuild $1 version ${GEM_VERSION}"
+rake build VERSION=${GEM_VERSION}
 echo "=== packageBuild $1 rake build complete"
 ls *.gem
 echo "--- packageInstall $1 mv gem file"
