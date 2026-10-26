@@ -61,7 +61,7 @@
           {{ setupError }}
         </v-alert>
         <!--
-          The running simulation's graph_tree.json comes from WarpWare's hub,
+          The running simulation's graph_tree.json comes from the WarpWare app,
           which puts each connected run's in COSMOS as the SIM target's: it is
           used first, and asked for again when this window is come back to. A
           file picked here serves this session, and is cached in localStorage
@@ -476,8 +476,8 @@ export default {
       .catch(() => {
         this.replies = false
       })
-    // The running simulation's tree, which the hub puts in COSMOS as the SIM target's, comes first; else the tree
-    // loaded here before, cached in this browser.
+    // The running simulation's tree, which the WarpWare app puts in COSMOS as the SIM target's, comes first; else
+    // the tree loaded here before, cached in this browser.
     this.loadGraphTree().then((loaded) => {
       if (!loaded) this.loadStoredTree()
     })
@@ -559,9 +559,10 @@ export default {
       }
       this.treeStatus = 'Load a graph_tree.json to enable address autocomplete.'
     },
-    // Fetch the running simulation's tree from the SIM target's folder, where the hub puts each connected run's: a
-    // plain target file, read via the storage download endpoint, trying targets_modified (where the hub, and an edit
-    // made in COSMOS, put it) before the packaged targets copy. Resolves to whether a tree is in use from there.
+    // Fetch the running simulation's tree from the SIM target's folder, where the WarpWare app puts each connected
+    // run's: a plain target file, read via the storage download endpoint, trying targets_modified (where the
+    // WarpWare app, and an edit made in COSMOS, put it) before the packaged targets copy. Resolves to whether a
+    // tree is in use from there.
     async loadGraphTree() {
       this.treeLookedAt = Date.now()
       const scope = window.openc3Scope || 'DEFAULT'
