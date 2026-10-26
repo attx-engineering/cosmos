@@ -23,7 +23,7 @@
 # All Rights Reserved
 
 # ##############################################################################
-# Simulation Value Injection (SIM)
+# Simulation Value Injection (SIM_CONTROL)
 #
 # Sends a single address/value pair to the simulation as JSON over its own UDP
 # port - separate from the flight software command/telemetry ports.  There is
@@ -54,7 +54,7 @@
 # by WarpLink's generator, because it does not come from a WarpOS build.
 # ##############################################################################
 
-COMMAND SIM SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
+COMMAND SIM_CONTROL SET_VALUE BIG_ENDIAN "Set a simulation input to a value"
   ACCESSOR JsonAccessor
   TEMPLATE '{"address":"","value":0,"sequence":0}'
   APPEND_PARAMETER ADDRESS 2048 STRING "" "Simulation address, e.g. .exc.spacecraft.params.mass"

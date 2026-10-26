@@ -13,19 +13,19 @@ tool sends this JSON out the simulation's own port:
 The value is sent as its natural JSON type: `5` is a number, `5.5` is a number,
 `true` is a boolean, and anything that is not valid JSON is sent as a string.
 
-The send goes through the normal COSMOS command path (`SIM SET_VALUE`), so
+The send goes through the normal COSMOS command path (`SIM_CONTROL SET_VALUE`), so
 every value you set is logged and visible in Command Sender and the command
 logs like any other command.
 
 ## What the simulation accepts
 
 The simulation **replies to each value** at the port it came from, which the
-`SIM` target's interface reads as its `REPLY` packet: whether it set the value,
+`SIM_CONTROL` target's interface reads as its `REPLY` packet: whether it set the value,
 and why not when it did not, with the value's `sequence`, which the tool numbers
 each value with. **Recent** shows each value **Set**, **Refused** with the
 simulation's reason, or **No reply** when nothing answered within five seconds:
-the simulation is not running or not connected, or the `SIM` block in the
-plugin's `plugin.txt` names no `sim_reply_port`, so its interface reads nothing.
+the simulation is not running or not connected, or the `SIM_CONTROL` block in the
+plugin's `plugin.txt` names no `sim_control_reply_port`, so its interface reads nothing.
 
 **Value types.** Send a scalar JSON value; the simulation maps it onto the
 addressed signal's type:
@@ -66,13 +66,13 @@ The simulation writes `graph_tree.json` into its output directory (alongside
 `sim_data.json`) on its first step, whenever `write-data-json` is on, which is
 the default. The tool finds a tree in this order:
 
-1. **The running simulation's**, the `SIM` target's `graph_tree.json` in
+1. **The running simulation's**, the `SIM_CONTROL` target's `graph_tree.json` in
    `targets_modified`, where the WarpWare app puts each connected run's
    (`warpware run`). The tool asks for it again when its window is come back
    to, so a run started after it opened is picked up.
 2. **One picked by hand**, under **Graph tree file**, which serves the session;
    it is cached in the browser, and used when no run has given a tree.
-3. A `graph_tree.json` packaged in the `SIM` target, when there is one.
+3. A `graph_tree.json` packaged in the `SIM_CONTROL` target, when there is one.
 
 If no tree is available the address field still works as free text —
 autocomplete is simply off, and the field hint says so.
@@ -80,9 +80,9 @@ autocomplete is simply off, and the field hint says so.
 ## Getting Started
 
 1. At the OpenC3 Admin - Plugins, upload the openc3-cosmos-tool-simcontrol.gem file
-2. Install a plugin that defines the `SIM` target with a `SET_VALUE` command
+2. Install a plugin that defines the `SIM_CONTROL` target with a `SET_VALUE` command
    mapped to an interface on the simulation port. The WarpLink plugin
-   (`openc3-cosmos-warplink`) ships one; the port is the `sim_write_port`
+   (`openc3-cosmos-warplink`) ships one; the port is the `sim_control_write_port`
    plugin variable.
 
 Sim Control shows an error in the tool if the target or command is missing, so

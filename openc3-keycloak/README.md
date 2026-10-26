@@ -99,8 +99,8 @@ resources aggressively in production mode; under `start-dev` it does not.
 | Role | Grants |
 |---|---|
 | `admin` | Everything, including simulation control and role administration |
-| `operator` | Commands and scripts on every target except `SIM`; no Sim Control tool |
-| `viewer` | Read-only telemetry and scripts; no `SIM`, no Sim Control tool |
+| `operator` | Commands and scripts on every target except `SIM_CONTROL`; no Sim Control tool |
+| `viewer` | Read-only telemetry and scripts; no `SIM_CONTROL`, no Sim Control tool |
 
 Role *names* live in Keycloak; what they *grant* lives in COSMOS. A role
 Keycloak knows about but COSMOS has no definition for grants nothing - unknown

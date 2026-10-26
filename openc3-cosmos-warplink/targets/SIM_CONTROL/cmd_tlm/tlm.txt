@@ -23,7 +23,7 @@
 # All Rights Reserved
 
 # ##############################################################################
-# The simulation's reply to a value set (SIM)
+# The simulation's reply to a value set (SIM_CONTROL)
 #
 # The simulation answers each SET_VALUE at the port it came from, which is the
 # interface's read port, with one JSON object:
@@ -35,7 +35,7 @@
 # carried one.  This target is hand written, as SET_VALUE is.
 # ##############################################################################
 
-TELEMETRY SIM REPLY BIG_ENDIAN "The simulation's reply to a value set: whether it set it, and why not"
+TELEMETRY SIM_CONTROL REPLY BIG_ENDIAN "The simulation's reply to a value set: whether it set it, and why not"
   ACCESSOR JsonAccessor
   # Template is not required for telemetry; it shows the shape.
   TEMPLATE '{"schemaVersion":1,"address":"","accepted":true,"sequence":0}'
