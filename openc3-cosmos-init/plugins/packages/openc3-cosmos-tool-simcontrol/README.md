@@ -67,9 +67,9 @@ The simulation writes `graph_tree.json` into its output directory (alongside
 the default. The tool finds a tree in this order:
 
 1. **The running simulation's**, the `SIM` target's `graph_tree.json` in
-   `targets_modified`, where WarpWare's hub puts each connected run's (`hub
-   run`). The tool asks for it again when its window is come back to, so a run
-   started after it opened is picked up.
+   `targets_modified`, where WarpWare's hub puts each connected run's
+   (`warpware run`). The tool asks for it again when its window is come back
+   to, so a run started after it opened is picked up.
 2. **One picked by hand**, under **Graph tree file**, which serves the session;
    it is cached in the browser, and used when no run has given a tree.
 3. A `graph_tree.json` packaged in the `SIM` target, when there is one.
