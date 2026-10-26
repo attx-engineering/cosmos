@@ -61,7 +61,7 @@ module OpenC3
         # Sim Control drives the SIM_CONTROL target, so excluding both the target
         # and the tool is what actually keeps an operator out of it - hiding the
         # tool alone would still leave the API reachable.
-        'excluded_targets' => ['SIM_CONTROL'],
+        'excluded_targets' => ['SIM'], # MUTANT
         'tools' => ALL,
         'excluded_tools' => ['simcontrol'],
       },
@@ -73,7 +73,7 @@ module OpenC3
         # SIM_CONTROL target as well as the tool. Without this a viewer is
         # blocked from opening Sim Control but can still read SIM_CONTROL command
         # definitions through the API, which is an inconsistent boundary.
-        'excluded_targets' => ['SIM_CONTROL'],
+        'excluded_targets' => ['SIM'], # MUTANT
         'tools' => ALL,
         'excluded_tools' => ['simcontrol'],
       },
