@@ -62,7 +62,7 @@
         </v-alert>
         <!--
           The running simulation's graph_tree.json comes from the WarpWare app,
-          which puts each connected run's in COSMOS as the SIM target's: it is
+          which puts each connected run's in COSMOS as the SIM_CONTROL target's: it is
           used first, and asked for again when this window is come back to. A
           file picked here serves this session, and is cached in localStorage
           for when no run has given a tree.
@@ -254,11 +254,11 @@
 import { Api, OpenC3Api } from '@openc3/js-common/services'
 import { TopBar } from '@openc3/vue-common/components'
 
-// The SIM target and its SET_VALUE command come from a plugin (openc3-cosmos-warplink
+// The SIM_CONTROL target and its SET_VALUE command come from a plugin (openc3-cosmos-warplink
 // ships one). The interface mapped to the target owns the simulation port.
-const TARGET_NAME = 'SIM'
+const TARGET_NAME = 'SIM_CONTROL'
 const COMMAND_NAME = 'SET_VALUE'
-// The simulation's reply to each value, read by the SIM target's interface; a target without it reads none.
+// The simulation's reply to each value, read by the SIM_CONTROL target's interface; a target without it reads none.
 const REPLY_PACKET = 'REPLY'
 // How long a value waits for its reply before it is said to have had none.
 const REPLY_WAIT_MS = 5000
@@ -313,16 +313,16 @@ export default {
       setupError: null,
       sending: false,
       history: [],
-      // The sim's graph-tree dump (graph_tree.json), copied into the SIM
+      // The sim's graph-tree dump (graph_tree.json), copied into the SIM_CONTROL
       // target directory. Drives address autocompletion; null until loaded (or
       // if absent, in which case the address field is just free text).
       tree: null,
       treeStatus: '',
       treeSource: '',
-      // The run's tree as last read from the SIM target, so a read finding the same one changes nothing.
+      // The run's tree as last read from the SIM_CONTROL target, so a read finding the same one changes nothing.
       treeText: '',
       treeLookedAt: 0,
-      // Whether the SIM target reads the simulation's replies (its REPLY packet), and each value's own number, which
+      // Whether the SIM_CONTROL target reads the simulation's replies (its REPLY packet), and each value's own number, which
       // the reply echoes; it starts anywhere, so a reply to another session's value is never taken for one of these.
       replies: false,
       sequence: Math.floor(Math.random() * 1000000),
@@ -467,7 +467,7 @@ export default {
       .catch((error) => {
         this.setupError = `Unable to look up targets: ${error.message}`
       })
-    // Whether the SIM target reads the simulation's replies: a target without its REPLY packet sends values alone.
+    // Whether the SIM_CONTROL target reads the simulation's replies: a target without its REPLY packet sends values alone.
     this.api
       .get_all_tlm_names(TARGET_NAME)
       .then((names) => {
@@ -476,7 +476,7 @@ export default {
       .catch(() => {
         this.replies = false
       })
-    // The running simulation's tree, which the WarpWare app puts in COSMOS as the SIM target's, comes first; else
+    // The running simulation's tree, which the WarpWare app puts in COSMOS as the SIM_CONTROL target's, comes first; else
     // the tree loaded here before, cached in this browser.
     this.loadGraphTree().then((loaded) => {
       if (!loaded) this.loadStoredTree()
@@ -495,7 +495,7 @@ export default {
   },
   methods: {
     // Restore the last-loaded tree from localStorage. Returns whether one was
-    // found, so mounted() knows whether to try the SIM target fallback.
+    // found, so mounted() knows whether to try the SIM_CONTROL target fallback.
     loadStoredTree() {
       try {
         const raw = localStorage.getItem(TREE_STORAGE_KEY)
@@ -559,7 +559,7 @@ export default {
       }
       this.treeStatus = 'Load a graph_tree.json to enable address autocomplete.'
     },
-    // Fetch the running simulation's tree from the SIM target's folder, where the WarpWare app puts each connected
+    // Fetch the running simulation's tree from the SIM_CONTROL target's folder, where the WarpWare app puts each connected
     // run's: a plain target file, read via the storage download endpoint, trying targets_modified (where the
     // WarpWare app, and an edit made in COSMOS, put it) before the packaged targets copy. Resolves to whether a
     // tree is in use from there.
@@ -764,7 +764,7 @@ export default {
         case 'refused':
           return `Refused: ${entry.replyError || 'the simulation gave no reason'}`
         case 'none':
-          return 'No reply: the simulation is not running or not connected, or SIM reads no replies (its plugin.txt block names no sim_reply_port)'
+          return 'No reply: the simulation is not running or not connected, or SIM_CONTROL reads no replies (its plugin.txt block names no sim_control_reply_port)'
         default:
           return 'Sent'
       }
