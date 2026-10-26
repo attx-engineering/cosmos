@@ -58,10 +58,10 @@ module OpenC3
         'description' => 'Send commands and run scripts on flight targets, but not simulation control',
         'permissions' => %w(system system_set tlm tlm_set cmd cmd_raw cmd_info script_view script_run),
         'targets' => ALL,
-        # Sim Control drives the SIM target, so excluding both the target and the
-        # tool is what actually keeps an operator out of it - hiding the tool
-        # alone would still leave the API reachable.
-        'excluded_targets' => ['SIM'],
+        # Sim Control drives the SIM_CONTROL target, so excluding both the target
+        # and the tool is what actually keeps an operator out of it - hiding the
+        # tool alone would still leave the API reachable.
+        'excluded_targets' => ['SIM_CONTROL'],
         'tools' => ALL,
         'excluded_tools' => ['simcontrol'],
       },
@@ -69,11 +69,11 @@ module OpenC3
         'description' => 'Read-only access to telemetry and scripts',
         'permissions' => %w(system tlm cmd_info script_view),
         'targets' => ALL,
-        # Simulation is administrative, so viewers are kept out of the SIM
-        # target as well as the tool. Without this a viewer is blocked from
-        # opening Sim Control but can still read SIM command definitions
-        # through the API, which is an inconsistent boundary.
-        'excluded_targets' => ['SIM'],
+        # Simulation is administrative, so viewers are kept out of the
+        # SIM_CONTROL target as well as the tool. Without this a viewer is
+        # blocked from opening Sim Control but can still read SIM_CONTROL command
+        # definitions through the API, which is an inconsistent boundary.
+        'excluded_targets' => ['SIM_CONTROL'],
         'tools' => ALL,
         'excluded_tools' => ['simcontrol'],
       },

@@ -35,7 +35,7 @@ module OpenC3
         RoleModel::PERMISSIONS.each do |permission|
           expect(admin.allow?(permission: permission, target_name: 'SAT1')).to be true
         end
-        expect(admin.allow?(permission: 'cmd', target_name: 'SIM')).to be true
+        expect(admin.allow?(permission: 'cmd', target_name: 'SIM_CONTROL')).to be true
         expect(admin.allow_tool?('simcontrol')).to be true
       end
     end
@@ -51,8 +51,8 @@ module OpenC3
 
       # The defining requirement for this role
       it 'cannot command the simulation target' do
-        expect(operator.allow?(permission: 'cmd', target_name: 'SIM')).to be false
-        expect(operator.allow?(permission: 'cmd_raw', target_name: 'SIM')).to be false
+        expect(operator.allow?(permission: 'cmd', target_name: 'SIM_CONTROL')).to be false
+        expect(operator.allow?(permission: 'cmd_raw', target_name: 'SIM_CONTROL')).to be false
       end
 
       it 'excludes the target regardless of case' do
