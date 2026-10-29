@@ -60,7 +60,9 @@ Leaf entries also carry their type, so you know whether a signal wants a number,
 a string, or a bracketed vector/matrix. When an address resolves to a settable
 signal, the Value field shows the **expected type** and auto-fills a template of
 the right type and shape (using the signal's current value from the dump), ready
-to edit — it never overwrites a value you've typed yourself.
+to edit — it never overwrites a value you've typed yourself. While that value is
+untouched, entering the field selects all of it, so typing replaces it and an
+arrow key edits it.
 
 The simulation writes `graph_tree.json` into its output directory (alongside
 `sim_data.json`) on its first step, whenever `write-data-json` is on, which is
