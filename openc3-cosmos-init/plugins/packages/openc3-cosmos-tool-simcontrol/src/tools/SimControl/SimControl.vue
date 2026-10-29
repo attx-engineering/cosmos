@@ -151,6 +151,7 @@
               persistent-hint
               :disabled="!!setupError"
               data-test="sim-value"
+              @focus="selectCurrentValue"
               @keydown.enter="send"
             />
           </v-col>
@@ -425,13 +426,15 @@ export default {
       return null
     },
     // Hint under the Value field: the expected type for the resolved signal
-    // when we know it, otherwise the general guidance.
+    // when we know it, otherwise the general guidance. While the field holds
+    // the filled-in value untouched, it says that is the current value.
     valueHint() {
       const leaf = this.resolvedLeaf
       if (leaf) {
-        return leaf.settable
-          ? `expected type: ${leaf.type}`
-          : `${leaf.type} — read-only, cannot be set`
+        if (!leaf.settable) return `${leaf.type} — read-only, cannot be set`
+        return this.value !== '' && this.value === this.autofilled
+          ? `expected type: ${leaf.type} — its current value`
+          : `expected type: ${leaf.type}`
       }
       return 'number, true/false, or text; arrays/matrices as a string'
     },
@@ -600,6 +603,13 @@ export default {
           'Load a graph_tree.json above to enable address autocomplete.'
       }
       return false
+    },
+    // Entering the Value field while it holds the filled-in value untouched
+    // selects all of it, so typing replaces it and an arrow key edits it:
+    // typed after it, the value would be nonsense the simulation refuses.
+    selectCurrentValue(event) {
+      if (this.value === '' || this.value !== this.autofilled) return
+      event.target?.select?.()
     },
     // Show the suggestion menu when the tree is loaded and there is at least
     // one candidate for what's currently typed.
