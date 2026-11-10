@@ -61,6 +61,22 @@
           {{ setupError }}
         </v-alert>
         <!--
+          The run Sim Control sets, as the WarpWare app tells it in the
+          SIM_CONTROL target's run.json: the run and when it started, or no run
+          once it ends. No line at all where nothing has ever told it, as with
+          a WarpWare app that writes none.
+        -->
+        <v-alert
+          v-if="runShown"
+          :type="runShown.running ? 'info' : 'warning'"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+          data-test="sim-run"
+        >
+          {{ runShown.text }}
+        </v-alert>
+        <!--
           The running simulation's graph_tree.json comes from the WarpWare app,
           which puts each connected run's in COSMOS as the SIM_CONTROL target's: it is
           used first, and asked for again when this window is come back to. A
@@ -254,6 +270,7 @@
 <script>
 import { Api, OpenC3Api } from '@openc3/js-common/services'
 import { TopBar } from '@openc3/vue-common/components'
+import { runLine, runOf } from './simControlRun.js'
 
 // The SIM_CONTROL target and its SET_VALUE command come from a plugin (openc3-cosmos-warplink
 // ships one). The interface mapped to the target owns the simulation port.
@@ -267,6 +284,8 @@ const REPLY_WAIT_MS = 5000
 const REPLY_LOOK_MS = 250
 // The run's tree is asked for again on focus at most this often.
 const TREE_LOOK_MS = 5000
+// How often the run that holds WarpLink is looked for.
+const RUN_LOOK_MS = 2000
 const MAX_HISTORY = 20
 // Where the last-loaded graph tree is cached so it survives page reloads.
 const TREE_STORAGE_KEY = 'simcontrol_graph_tree'
@@ -323,6 +342,12 @@ export default {
       // The run's tree as last read from the SIM_CONTROL target, so a read finding the same one changes nothing.
       treeText: '',
       treeLookedAt: 0,
+      // The run the WarpWare app last said holds WarpLink (run.json): undefined while none has ever been said, null when
+      // what it said is not read; when it started, so a new run's tree is taken at once; and when it was last looked at.
+      run: undefined,
+      runStarted: '',
+      runLookedAt: 0,
+      runTimer: null,
       // Whether the SIM_CONTROL target reads the simulation's replies (its REPLY packet), and each value's own number, which
       // the reply echoes; it starts anywhere, so a reply to another session's value is never taken for one of these.
       replies: false,
@@ -360,6 +385,11 @@ export default {
     }
   },
   computed: {
+    // What is said of the run that holds WarpLink: none while nothing has told Sim Control of one.
+    runShown() {
+      if (this.run === undefined) return null
+      return runLine(this.run, new Date(this.runLookedAt))
+    },
     // The value is sent as whatever JSON type it parses as, so 5 is a number,
     // true is a boolean, and NADIR is a string
     parsedValue() {
@@ -491,10 +521,14 @@ export default {
       this.loadGraphTree()
     }
     window.addEventListener('focus', this.onFocus)
+    // The run that holds WarpLink, looked for every few seconds.
+    this.loadRun()
+    this.runTimer = setInterval(this.loadRun, RUN_LOOK_MS)
   },
   beforeUnmount() {
     window.removeEventListener('focus', this.onFocus)
     clearInterval(this.replyTimer)
+    clearInterval(this.runTimer)
   },
   methods: {
     // Restore the last-loaded tree from localStorage. Returns whether one was
@@ -603,6 +637,34 @@ export default {
           'Load a graph_tree.json above to enable address autocomplete.'
       }
       return false
+    },
+    // The run that holds WarpLink, as the WarpWare app last said in the SIM_CONTROL target's run.json. A run newly
+    // started has put its tree beside it: taken at once, unless a file was picked here for this session. Once said, a
+    // run.json gone is no run.
+    async loadRun() {
+      const scope = window.openc3Scope || 'DEFAULT'
+      const objectPath = `${scope}/targets_modified/${TARGET_NAME}/run.json`
+      let text
+      try {
+        const response = await Api.get(`/openc3-api/storage/download_file/${encodeURIComponent(objectPath)}`, {
+          params: { bucket: 'OPENC3_CONFIG_BUCKET' },
+          headers: { 'Ignore-Errors': '404,500' },
+        })
+        text = response?.data?.contents ? atob(response.data.contents) : undefined
+      } catch {
+        text = undefined
+      }
+      this.runLookedAt = Date.now()
+      if (text === undefined) {
+        if (this.run !== undefined) this.run = null
+        return
+      }
+      const run = runOf(text)
+      if (run !== null && run.state === 'running' && run.started !== this.runStarted && this.treeSource !== 'file') {
+        this.loadGraphTree()
+      }
+      this.runStarted = run?.started ?? ''
+      this.run = run
     },
     // Entering the Value field while it holds the filled-in value untouched
     // selects all of it, so typing replaces it and an arrow key edits it:
