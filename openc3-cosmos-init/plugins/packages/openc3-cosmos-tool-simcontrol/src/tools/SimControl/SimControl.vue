@@ -186,23 +186,25 @@
               {{ gridCells.length }}×{{ gridCells[0].length }}, as WarpTwin
               wrote it: each cell a number
             </span>
-            <table class="grid">
-              <tr v-for="(row, r) in gridCells" :key="r">
-                <td v-for="(cell, c) in row" :key="c">
-                  <v-text-field
-                    :model-value="cell"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    :error="cellBad(r, c)"
-                    :disabled="!!setupError"
-                    :data-test="`sim-grid-${r}-${c}`"
-                    @update:model-value="setCell(r, c, $event)"
-                    @keydown.enter="send"
-                  />
-                </td>
-              </tr>
-            </table>
+            <div class="grid-scroll">
+              <table class="grid">
+                <tr v-for="(row, r) in gridCells" :key="r">
+                  <td v-for="(cell, c) in row" :key="c">
+                    <v-text-field
+                      :model-value="cell"
+                      variant="outlined"
+                      density="compact"
+                      hide-details
+                      :error="cellBad(r, c)"
+                      :disabled="!!setupError"
+                      :data-test="`sim-grid-${r}-${c}`"
+                      @update:model-value="setCell(r, c, $event)"
+                      @keydown.enter="send"
+                    />
+                  </td>
+                </tr>
+              </table>
+            </div>
           </v-col>
         </v-row>
         <v-row dense class="mt-1">
@@ -942,6 +944,11 @@ export default {
 <style scoped>
 .preview {
   font-family: 'Courier New', Courier, monospace;
+}
+/* A filter's 10×10 is wider than the page: the grid scrolls in its own box. */
+.grid-scroll {
+  max-width: 100%;
+  overflow-x: auto;
 }
 .grid {
   border-collapse: collapse;

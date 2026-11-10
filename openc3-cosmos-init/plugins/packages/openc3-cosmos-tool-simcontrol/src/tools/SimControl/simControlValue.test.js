@@ -50,6 +50,21 @@ test('the cells written back in their own form, which the simulation takes', () 
   assert.deepEqual(shapeOf('matrix', valueOf(inertia, inertia.cells)).cells, inertia.cells)
 })
 
+// A square matrix as WarpTwin writes one, each cell given by cell(r, c), in %f.
+const square = (n, cell) =>
+  `[[${Array.from({ length: n }, (_, r) => Array.from({ length: n }, (_, c) => cell(r, c).toFixed(6)).join(',')).join('][')}]]`
+
+test("a filter's covariances: a 6×6 and a 10×10 at zero, and a 10×10 around 1e6, each round trip exact", () => {
+  for (const [n, cell, length] of [[6, () => 0, 332], [10, () => 0, 912], [10, (r, c) => 1e6 + r * 10 + c, 1512]]) {
+    const text = square(n, cell)
+    assert.equal(text.length, length, 'the length WarpTwin writes')
+    const shape = shapeOf('matrix', text)
+    assert.deepEqual([shape.rows, shape.cols], [n, n])
+    assert.equal(valueOf(shape, shape.cells), text)
+  }
+  assert.equal(shapeOf('matrix', square(10, (r, c) => 1e6 + r * 10 + c)).cells[9][9], '1000099.000000')
+})
+
 test('a cell that is no number is marked, and Send waits', () => {
   assert.deepEqual(badCells([['1', ''], ['x', '2e3']]), [[0, 1], [1, 0]])
   assert.deepEqual(badCells([['1', '-0.5']]), [])
@@ -57,36 +72,36 @@ test('a cell that is no number is marked, and Send waits', () => {
 
 const TREE = {
   name: 'exc', address: '.exc', children: [
-    { name: 'PdAttitudeControl', address: '.exc.PdAttitudeControl', children: [
-      { name: 'inputs', address: '.exc.PdAttitudeControl.inputs', children: [
-        { name: 'cmd_quat', address: '.exc.PdAttitudeControl.inputs.cmd_quat', type: 'matrix', settable: true, value: QUAT },
-        { name: 'gain', address: '.exc.PdAttitudeControl.inputs.gain', type: 'float', settable: true, value: '0.5' },
+    { name: 'PointingControl', address: '.exc.PointingControl', children: [
+      { name: 'inputs', address: '.exc.PointingControl.inputs', children: [
+        { name: 'target_quat', address: '.exc.PointingControl.inputs.target_quat', type: 'matrix', settable: true, value: QUAT },
+        { name: 'gain', address: '.exc.PointingControl.inputs.gain', type: 'float', settable: true, value: '0.5' },
       ] },
     ] },
     { name: 'sc', address: '.exc.sc', children: [] },
-    { name: 'attitude_monitor', address: '.exc.attitude_monitor', children: [] },
+    { name: 'control_monitor', address: '.exc.control_monitor', children: [] },
   ],
 }
 
 test('suggestions to the next .: the root, then each level, starting with what is typed first, then holding it, case aside', () => {
   assert.deepEqual(nextSegments(TREE, '').map((s) => s.address), ['.exc'])
-  assert.deepEqual(nextSegments(TREE, '.exc.').map((s) => s.name), ['PdAttitudeControl', 'sc', 'attitude_monitor'])
-  assert.deepEqual(nextSegments(TREE, '.exc.att').map((s) => s.name), ['attitude_monitor', 'PdAttitudeControl'], 'starting before holding')
-  assert.deepEqual(nextSegments(TREE, '.exc.PDATT').map((s) => s.name), ['PdAttitudeControl'], 'case aside')
+  assert.deepEqual(nextSegments(TREE, '.exc.').map((s) => s.name), ['PointingControl', 'sc', 'control_monitor'])
+  assert.deepEqual(nextSegments(TREE, '.exc.con').map((s) => s.name), ['control_monitor', 'PointingControl'], 'starting before holding')
+  assert.deepEqual(nextSegments(TREE, '.exc.POINT').map((s) => s.name), ['PointingControl'], 'case aside')
   assert.deepEqual(nextSegments(TREE, '.exc.nothing'), [])
   assert.deepEqual(nextSegments(null, '.exc.'), [])
-  assert.deepEqual(nextSegments(TREE, '.exc.PdAttitudeControl.inputs.'), [
-    { name: 'cmd_quat', address: '.exc.PdAttitudeControl.inputs.cmd_quat', branch: false, detail: `matrix 4×1  ${QUAT.slice(0, 31)}…` },
-    { name: 'gain', address: '.exc.PdAttitudeControl.inputs.gain', branch: false, detail: 'float  0.5' },
+  assert.deepEqual(nextSegments(TREE, '.exc.PointingControl.inputs.'), [
+    { name: 'target_quat', address: '.exc.PointingControl.inputs.target_quat', branch: false, detail: `matrix 4×1  ${QUAT.slice(0, 31)}…` },
+    { name: 'gain', address: '.exc.PointingControl.inputs.gain', branch: false, detail: 'float  0.5' },
   ])
   assert.equal(nextSegments(TREE, '.exc.', 2).length, 2, 'at most the limit')
 })
 
 test('a suggestion taken: a branch with its ., ready for the next segment; a leaf as it is', () => {
-  const [branch] = nextSegments(TREE, '.exc.Pd')
-  assert.equal(accepted(branch), '.exc.PdAttitudeControl.')
-  const [leaf] = nextSegments(TREE, '.exc.PdAttitudeControl.inputs.cmd')
-  assert.equal(accepted(leaf), '.exc.PdAttitudeControl.inputs.cmd_quat')
-  assert.equal(nodeAt(TREE, '.exc.PdAttitudeControl.inputs.gain').value, '0.5')
+  const [branch] = nextSegments(TREE, '.exc.Po')
+  assert.equal(accepted(branch), '.exc.PointingControl.')
+  const [leaf] = nextSegments(TREE, '.exc.PointingControl.inputs.tar')
+  assert.equal(accepted(leaf), '.exc.PointingControl.inputs.target_quat')
+  assert.equal(nodeAt(TREE, '.exc.PointingControl.inputs.gain').value, '0.5')
   assert.equal(nodeAt(TREE, '.exc.missing'), null)
 })
