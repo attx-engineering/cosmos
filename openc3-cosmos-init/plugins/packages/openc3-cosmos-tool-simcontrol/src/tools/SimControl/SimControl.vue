@@ -111,8 +111,9 @@
               with a manually controlled suggestion menu driven by the loaded
               graph tree. Free text always works, so an address can be entered
               even if the tree file is missing or stale. addressSuggestions
-              returns exactly the next level down the tree for what's typed,
-              cascading like member access in C++.
+              returns the next segment of the address for what's typed, to the
+              next '.', by name, case aside; the arrow keys choose one, and Tab,
+              Enter or '.' takes it.
             -->
             <v-menu
               v-model="showSuggestions"
@@ -137,7 +138,7 @@
                   data-test="sim-address"
                   @update:model-value="openSuggestions"
                   @focus="openSuggestions"
-                  @keydown.enter="send"
+                  @keydown="onAddressKey"
                 />
               </template>
               <v-list
@@ -147,9 +148,11 @@
                 data-test="sim-address-suggestions"
               >
                 <v-list-item
-                  v-for="s in addressSuggestions"
-                  :key="s"
-                  :title="s"
+                  v-for="(s, i) in addressSuggestions"
+                  :key="s.address"
+                  :title="s.branch ? `${s.name} ›` : s.name"
+                  :subtitle="s.detail"
+                  :active="i === suggestionIndex"
                   @click="pickSuggestion(s)"
                 />
               </v-list>
@@ -170,6 +173,36 @@
               @focus="selectCurrentValue"
               @keydown.enter="send"
             />
+          </v-col>
+        </v-row>
+        <!--
+          A vector, matrix or quaternion's value as a grid of number fields,
+          shaped from the value WarpTwin wrote, each cell written back into the
+          Value field above in the form the simulation takes.
+        -->
+        <v-row v-if="gridCells" dense class="mt-1" data-test="sim-grid">
+          <v-col cols="12">
+            <span class="text-caption">
+              {{ gridCells.length }}×{{ gridCells[0].length }}, as WarpTwin
+              wrote it: each cell a number
+            </span>
+            <table class="grid">
+              <tr v-for="(row, r) in gridCells" :key="r">
+                <td v-for="(cell, c) in row" :key="c">
+                  <v-text-field
+                    :model-value="cell"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    :error="cellBad(r, c)"
+                    :disabled="!!setupError"
+                    :data-test="`sim-grid-${r}-${c}`"
+                    @update:model-value="setCell(r, c, $event)"
+                    @keydown.enter="send"
+                  />
+                </td>
+              </tr>
+            </table>
           </v-col>
         </v-row>
         <v-row dense class="mt-1">
@@ -271,6 +304,7 @@
 import { Api, OpenC3Api } from '@openc3/js-common/services'
 import { TopBar } from '@openc3/vue-common/components'
 import { runLine, runOf } from './simControlRun.js'
+import { accepted, badCells, GRID_TYPES, nextSegments, NO_GRID, nodeAt, shapeOf, valueOf } from './simControlValue.js'
 
 // The SIM_CONTROL target and its SET_VALUE command come from a plugin (openc3-cosmos-warplink
 // ships one). The interface mapped to the target owns the simulation port.
@@ -354,6 +388,13 @@ export default {
       sequence: Math.floor(Math.random() * 1000000),
       replyTimer: null,
       showSuggestions: false,
+      // The suggestion the arrow keys have chosen.
+      suggestionIndex: 0,
+      // The grid of the value's cells, and its form, while the value is a vector, matrix or quaternion WarpTwin wrote one
+      // for: its own cells, so a cell cleared while typed into keeps the grid. Set from the grid, the value is not read back.
+      gridCells: null,
+      gridShape: null,
+      fromGrid: false,
       // The last value we auto-filled from a signal's template, so we can
       // replace it when the address changes without clobbering a value the
       // user typed themselves.
@@ -411,30 +452,18 @@ export default {
         this.sending ||
         !!this.setupError ||
         (this.address || '').trim() === '' ||
-        this.value.trim() === ''
+        this.value.trim() === '' ||
+        this.gridBad.length > 0
       )
     },
-    // Cascading address suggestions: given what's typed, list the nodes at the
-    // next level down the tree (like member access in C++). The text up to the
-    // last '.' is the committed path; the text after it filters that level's
-    // children by name. Returns full dotted addresses so selecting one just
-    // extends the field, ready for another '.' to go deeper.
+    // Each grid cell that is no number: marked, and Send waits.
+    gridBad() {
+      return this.gridCells ? badCells(this.gridCells) : []
+    },
+    // The next segment of the address for what's typed, to the next '.' (James, 2026-11-10): the children of the path
+    // chosen so far, by name, case aside, those starting with what's typed before those holding it (simControlValue.js).
     addressSuggestions() {
-      if (!this.tree) return []
-      const raw = this.address || ''
-      const lastDot = raw.lastIndexOf('.')
-      const base = lastDot >= 0 ? raw.slice(0, lastDot) : ''
-      const partial = lastDot >= 0 ? raw.slice(lastDot + 1) : raw
-      // base === '' means we're still at the root ('.exc'); otherwise list the
-      // children of the node at the committed path.
-      const level =
-        base === ''
-          ? [this.tree]
-          : (this.findNodeByAddress(base)?.children ?? [])
-      return level
-        .filter((node) => node.name.startsWith(partial))
-        .map((node) => node.address)
-        .slice(0, 100)
+      return nextSegments(this.tree, this.address)
     },
     treeHint() {
       if (this.tree) return 'autocomplete from graph_tree.json'
@@ -462,6 +491,7 @@ export default {
       const leaf = this.resolvedLeaf
       if (leaf) {
         if (!leaf.settable) return `${leaf.type} — read-only, cannot be set`
+        if (GRID_TYPES.includes(leaf.type) && shapeOf(leaf.type, leaf.value) === null) return NO_GRID
         return this.value !== '' && this.value === this.autofilled
           ? `expected type: ${leaf.type} — its current value`
           : `expected type: ${leaf.type}`
@@ -475,11 +505,23 @@ export default {
     // the user typed -- only fill when the field is empty or still holds our
     // last auto-filled template.
     resolvedLeaf(leaf) {
-      if (!leaf || !leaf.settable) return
-      if (this.value !== '' && this.value !== this.autofilled) return
-      const template = this.templateForLeaf(leaf)
-      this.value = template
-      this.autofilled = template
+      if (leaf && leaf.settable && (this.value === '' || this.value === this.autofilled)) {
+        const template = this.templateForLeaf(leaf)
+        this.value = template
+        this.autofilled = template
+      }
+      this.gridFrom(leaf)
+    },
+    // The value changed in its own field, not from the grid: the grid follows it while it reads as the leaf's shape.
+    value() {
+      if (this.fromGrid) {
+        this.fromGrid = false
+        return
+      }
+      this.gridFrom(this.resolvedLeaf)
+    },
+    address() {
+      this.suggestionIndex = 0
     },
   },
   created() {
@@ -682,12 +724,62 @@ export default {
     // trailing '.' so the next suggestions are its children (drilling deeper);
     // if it's a leaf, leave it as-is and close the menu.
     pickSuggestion(suggestion) {
-      const node = this.findNodeByAddress(suggestion)
-      const hasChildren = !!node?.children?.length
-      this.address = hasChildren ? `${suggestion}.` : suggestion
+      this.address = accepted(suggestion)
+      this.suggestionIndex = 0
       this.$nextTick(() => {
-        this.showSuggestions = hasChildren && this.addressSuggestions.length > 0
+        this.showSuggestions = suggestion.branch && this.addressSuggestions.length > 0
       })
+    },
+    // The address field's keys while suggestions show: the arrows choose one; Tab, Enter, or the arrow right at the
+    // field's end take it; '.' takes a branch, going on into it. Enter sends once the address is taken, and with no
+    // suggestion showing; Escape closes them.
+    onAddressKey(event) {
+      const list = this.addressSuggestions
+      const open = this.showSuggestions && list.length > 0
+      const chosen = open ? list[Math.min(this.suggestionIndex, list.length - 1)] : undefined
+      const atEnd = event.target?.selectionStart === (this.address || '').length
+      if (open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        event.preventDefault()
+        const step = event.key === 'ArrowDown' ? 1 : list.length - 1
+        this.suggestionIndex = (this.suggestionIndex + step) % list.length
+        return
+      }
+      if (chosen && accepted(chosen) !== this.address &&
+        (event.key === 'Tab' || event.key === 'Enter' || (event.key === 'ArrowRight' && atEnd) || (event.key === '.' && chosen.branch))) {
+        event.preventDefault()
+        this.pickSuggestion(chosen)
+        return
+      }
+      if (event.key === 'Escape') {
+        this.showSuggestions = false
+        return
+      }
+      if (event.key === 'Enter') this.send()
+    },
+    // The grid for a leaf: shaped from the value WarpTwin wrote for it, and filled from the Value field while that reads
+    // as the same shape; none for a leaf with no such value, as WarpTwin writes none it could not, nor while the field
+    // reads as another shape.
+    gridFrom(leaf) {
+      const shape = leaf && leaf.settable && GRID_TYPES.includes(leaf.type) ? shapeOf(leaf.type, leaf.value) : null
+      const now = shape ? shapeOf(leaf.type, this.value) : null
+      const same = now && now.form === shape.form && now.rows === shape.rows && now.cols === shape.cols
+      this.gridShape = shape
+      this.gridCells = same ? now.cells.map((row) => [...row]) : null
+    },
+    // Whether a grid cell is no number.
+    cellBad(r, c) {
+      return this.gridBad.some(([br, bc]) => br === r && bc === c)
+    },
+    // A cell typed into: the grid's cells kept, the Value field written from them in the form the simulation takes.
+    setCell(r, c, text) {
+      const cells = this.gridCells.map((row) => [...row])
+      cells[r][c] = text ?? ''
+      this.gridCells = cells
+      const next = valueOf(this.gridShape, cells)
+      if (next !== this.value) {
+        this.fromGrid = true
+        this.value = next
+      }
     },
     // A ready-to-edit value for a signal. The dump's current value is the best
     // template -- it is already the right type and, for vectors/matrices, the
@@ -716,14 +808,7 @@ export default {
     },
     // Depth-first search for the node whose full dotted address matches.
     findNodeByAddress(address) {
-      if (!this.tree) return null
-      const stack = [this.tree]
-      while (stack.length) {
-        const node = stack.pop()
-        if (node.address === address) return node
-        if (node.children) stack.push(...node.children)
-      }
-      return null
+      return nodeAt(this.tree, address)
     },
     send() {
       if (this.sendDisabled) return
@@ -857,5 +942,13 @@ export default {
 <style scoped>
 .preview {
   font-family: 'Courier New', Courier, monospace;
+}
+.grid {
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+.grid td {
+  min-width: 7rem;
+  padding: 2px;
 }
 </style>
