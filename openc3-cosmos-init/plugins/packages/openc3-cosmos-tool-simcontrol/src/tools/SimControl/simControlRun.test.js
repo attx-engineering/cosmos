@@ -21,7 +21,7 @@ import { RUN_STALE_MS, runLine, runOf, since } from './simControlRun.js'
 const RUNNING = {
   format: 'warpware.sim-run/1',
   state: 'running',
-  script: 'scripts/examples/moon_visuals/script.py',
+  script: 'scripts/demo/script.py',
   pid: 4120,
   started: new Date(2026, 10, 10, 10, 42).toISOString(),
   heartbeat: new Date(2026, 10, 10, 10, 50).toISOString(),
@@ -50,7 +50,7 @@ test('the run, while its heartbeat is fresh; no run once it ends, or its heartbe
   assert.deepEqual(runLine(status, now), {
     running: true,
     started: RUNNING.started,
-    text: 'Run: scripts/examples/moon_visuals/script.py, since 10:42',
+    text: 'Run: scripts/demo/script.py, since 10:42',
   })
   const none = { running: false, text: 'No run: start a simulation in the WarpWare app, and it connects here' }
   assert.deepEqual(runLine(status, new Date(new Date(RUNNING.heartbeat).getTime() + RUN_STALE_MS + 1)), none, 'its process stopped')
