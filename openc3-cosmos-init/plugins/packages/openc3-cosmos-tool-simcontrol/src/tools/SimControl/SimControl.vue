@@ -306,7 +306,16 @@
 import { Api, OpenC3Api } from '@openc3/js-common/services'
 import { TopBar } from '@openc3/vue-common/components'
 import { runLine, runOf } from './simControlRun.js'
-import { accepted, badCells, GRID_TYPES, nextSegments, NO_GRID, nodeAt, shapeOf, valueOf } from './simControlValue.js'
+import {
+  accepted,
+  badCells,
+  GRID_TYPES,
+  nextSegments,
+  NO_GRID,
+  nodeAt,
+  shapeOf,
+  valueOf,
+} from './simControlValue.js'
 
 // The SIM_CONTROL target and its SET_VALUE command come from a plugin (openc3-cosmos-warplink
 // ships one). The interface mapped to the target owns the simulation port.
@@ -332,7 +341,11 @@ const TREE_SCHEMA_VERSION = 1
 // another version is refused, rather than read as what it may not be; one with no version, as WarpTwin wrote before
 // it versioned the file, is the tree itself.
 function treeOf(contents) {
-  if (contents === null || typeof contents !== 'object' || Array.isArray(contents)) {
+  if (
+    contents === null ||
+    typeof contents !== 'object' ||
+    Array.isArray(contents)
+  ) {
     return new Error('it is not a graph_tree.json: no tree in it')
   }
   if ('schemaVersion' in contents) {
@@ -493,7 +506,11 @@ export default {
       const leaf = this.resolvedLeaf
       if (leaf) {
         if (!leaf.settable) return `${leaf.type} — read-only, cannot be set`
-        if (GRID_TYPES.includes(leaf.type) && shapeOf(leaf.type, leaf.value) === null) return NO_GRID
+        if (
+          GRID_TYPES.includes(leaf.type) &&
+          shapeOf(leaf.type, leaf.value) === null
+        )
+          return NO_GRID
         return this.value !== '' && this.value === this.autofilled
           ? `expected type: ${leaf.type} — its current value`
           : `expected type: ${leaf.type}`
@@ -507,7 +524,11 @@ export default {
     // the user typed -- only fill when the field is empty or still holds our
     // last auto-filled template.
     resolvedLeaf(leaf) {
-      if (leaf && leaf.settable && (this.value === '' || this.value === this.autofilled)) {
+      if (
+        leaf &&
+        leaf.settable &&
+        (this.value === '' || this.value === this.autofilled)
+      ) {
         const template = this.templateForLeaf(leaf)
         this.value = template
         this.autofilled = template
@@ -561,7 +582,11 @@ export default {
     // A run started since this opened has put its tree there: asked for again when this window is come back to,
     // unless a file was picked here for this session.
     this.onFocus = () => {
-      if (this.treeSource === 'file' || Date.now() - this.treeLookedAt < TREE_LOOK_MS) return
+      if (
+        this.treeSource === 'file' ||
+        Date.now() - this.treeLookedAt < TREE_LOOK_MS
+      )
+        return
       this.loadGraphTree()
     }
     window.addEventListener('focus', this.onFocus)
@@ -614,7 +639,10 @@ export default {
           this.tree = null
           this.treeSource = ''
           this.treeStatus = `Could not use ${chosen.name}: ${tree.message}`
-          this.$notify.caution({ title: 'Graph tree not loaded', body: this.treeStatus })
+          this.$notify.caution({
+            title: 'Graph tree not loaded',
+            body: this.treeStatus,
+          })
           return
         }
         this.tree = tree
@@ -690,11 +718,16 @@ export default {
       const objectPath = `${scope}/targets_modified/${TARGET_NAME}/run.json`
       let text
       try {
-        const response = await Api.get(`/openc3-api/storage/download_file/${encodeURIComponent(objectPath)}`, {
-          params: { bucket: 'OPENC3_CONFIG_BUCKET' },
-          headers: { 'Ignore-Errors': '404,500' },
-        })
-        text = response?.data?.contents ? atob(response.data.contents) : undefined
+        const response = await Api.get(
+          `/openc3-api/storage/download_file/${encodeURIComponent(objectPath)}`,
+          {
+            params: { bucket: 'OPENC3_CONFIG_BUCKET' },
+            headers: { 'Ignore-Errors': '404,500' },
+          },
+        )
+        text = response?.data?.contents
+          ? atob(response.data.contents)
+          : undefined
       } catch {
         text = undefined
       }
@@ -704,7 +737,12 @@ export default {
         return
       }
       const run = runOf(text)
-      if (run !== null && run.state === 'running' && run.started !== this.runStarted && this.treeSource !== 'file') {
+      if (
+        run !== null &&
+        run.state === 'running' &&
+        run.started !== this.runStarted &&
+        this.treeSource !== 'file'
+      ) {
         this.loadGraphTree()
       }
       this.runStarted = run?.started ?? ''
@@ -729,7 +767,8 @@ export default {
       this.address = accepted(suggestion)
       this.suggestionIndex = 0
       this.$nextTick(() => {
-        this.showSuggestions = suggestion.branch && this.addressSuggestions.length > 0
+        this.showSuggestions =
+          suggestion.branch && this.addressSuggestions.length > 0
       })
     },
     // The address field's keys while suggestions show: the arrows choose one; Tab, Enter, or the arrow right at the
@@ -738,7 +777,9 @@ export default {
     onAddressKey(event) {
       const list = this.addressSuggestions
       const open = this.showSuggestions && list.length > 0
-      const chosen = open ? list[Math.min(this.suggestionIndex, list.length - 1)] : undefined
+      const chosen = open
+        ? list[Math.min(this.suggestionIndex, list.length - 1)]
+        : undefined
       const atEnd = event.target?.selectionStart === (this.address || '').length
       if (open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
         event.preventDefault()
@@ -746,8 +787,14 @@ export default {
         this.suggestionIndex = (this.suggestionIndex + step) % list.length
         return
       }
-      if (chosen && accepted(chosen) !== this.address &&
-        (event.key === 'Tab' || event.key === 'Enter' || (event.key === 'ArrowRight' && atEnd) || (event.key === '.' && chosen.branch))) {
+      if (
+        chosen &&
+        accepted(chosen) !== this.address &&
+        (event.key === 'Tab' ||
+          event.key === 'Enter' ||
+          (event.key === 'ArrowRight' && atEnd) ||
+          (event.key === '.' && chosen.branch))
+      ) {
         event.preventDefault()
         this.pickSuggestion(chosen)
         return
@@ -762,9 +809,16 @@ export default {
     // as the same shape; none for a leaf with no such value, as WarpTwin writes none it could not, nor while the field
     // reads as another shape.
     gridFrom(leaf) {
-      const shape = leaf && leaf.settable && GRID_TYPES.includes(leaf.type) ? shapeOf(leaf.type, leaf.value) : null
+      const shape =
+        leaf && leaf.settable && GRID_TYPES.includes(leaf.type)
+          ? shapeOf(leaf.type, leaf.value)
+          : null
       const now = shape ? shapeOf(leaf.type, this.value) : null
-      const same = now && now.form === shape.form && now.rows === shape.rows && now.cols === shape.cols
+      const same =
+        now &&
+        now.form === shape.form &&
+        now.rows === shape.rows &&
+        now.cols === shape.cols
       this.gridShape = shape
       this.gridCells = same ? now.cells.map((row) => [...row]) : null
     },
@@ -788,7 +842,11 @@ export default {
     // right dimensions -- so prefer it; otherwise fall back to a generic
     // per-type stub the user can shape.
     templateForLeaf(leaf) {
-      if (leaf.value !== undefined && leaf.value !== null && leaf.value !== '') {
+      if (
+        leaf.value !== undefined &&
+        leaf.value !== null &&
+        leaf.value !== ''
+      ) {
         return leaf.value
       }
       switch (leaf.type) {
@@ -818,12 +876,16 @@ export default {
       const address = this.address.trim()
       const value = this.parsedValue
       // Numbered, when the simulation's replies are read, so its reply is matched to this value.
-      const sequence = this.replies ? (this.sequence = (this.sequence + 1) % 4294967296) : undefined
+      const sequence = this.replies
+        ? (this.sequence = (this.sequence + 1) % 4294967296)
+        : undefined
       this.api
         .cmd(
           TARGET_NAME,
           COMMAND_NAME,
-          sequence === undefined ? { ADDRESS: address, VALUE: value } : { ADDRESS: address, VALUE: value, SEQUENCE: sequence },
+          sequence === undefined
+            ? { ADDRESS: address, VALUE: value }
+            : { ADDRESS: address, VALUE: value, SEQUENCE: sequence },
           // Handled below, so don't let the interceptor pop its own error
           { 'Ignore-Errors': '428 500' },
         )
@@ -874,7 +936,10 @@ export default {
       })
       this.history = this.history.slice(0, MAX_HISTORY)
       if (this.history.some((e) => e.reply === 'waiting') && !this.replyTimer) {
-        this.replyTimer = setInterval(() => this.lookForReplies(), REPLY_LOOK_MS)
+        this.replyTimer = setInterval(
+          () => this.lookForReplies(),
+          REPLY_LOOK_MS,
+        )
       }
     },
     // The latest reply, matched to the value waiting for it by its number; a value waiting too long had none.
@@ -886,9 +951,17 @@ export default {
         return
       }
       try {
-        const packet = await this.api.get_tlm_packet(TARGET_NAME, REPLY_PACKET, 'CONVERTED')
-        const item = Object.fromEntries((packet ?? []).map(([name, value]) => [name, value]))
-        const entry = waiting.find((e) => e.sequence === item.SEQUENCE && e.address === item.ADDRESS)
+        const packet = await this.api.get_tlm_packet(
+          TARGET_NAME,
+          REPLY_PACKET,
+          'CONVERTED',
+        )
+        const item = Object.fromEntries(
+          (packet ?? []).map(([name, value]) => [name, value]),
+        )
+        const entry = waiting.find(
+          (e) => e.sequence === item.SEQUENCE && e.address === item.ADDRESS,
+        )
         if (entry) {
           entry.reply = item.ACCEPTED === true ? 'accepted' : 'refused'
           entry.replyError = item.ERROR ?? ''
@@ -908,9 +981,16 @@ export default {
     // What the simulation said of a value, as a notification: set, refused with its reason, or no reply.
     notifyReply(entry) {
       if (entry.reply === 'accepted') {
-        this.$notify.normal({ title: `Set ${entry.address}`, body: entry.value, severity: 'success' })
+        this.$notify.normal({
+          title: `Set ${entry.address}`,
+          body: entry.value,
+          severity: 'success',
+        })
       } else {
-        this.$notify.caution({ title: `${entry.address} was not set`, body: this.resultText(entry) })
+        this.$notify.caution({
+          title: `${entry.address} was not set`,
+          body: this.resultText(entry),
+        })
       }
     },
     resultText(entry) {

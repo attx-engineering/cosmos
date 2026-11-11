@@ -31,10 +31,18 @@ export function shapeOf(type, text) {
   if (value === '') return null
   let shape
   if (value.startsWith('[[') && value.endsWith(']]')) {
-    const rows = value.slice(2, -2).split('][').map((row) => row.split(','))
+    const rows = value
+      .slice(2, -2)
+      .split('][')
+      .map((row) => row.split(','))
     const cols = rows[0].length
     if (rows.some((row) => row.length !== cols)) return null
-    shape = { form: 'rows', rows: rows.length, cols, cells: rows.map((row) => row.map((c) => c.trim())) }
+    shape = {
+      form: 'rows',
+      rows: rows.length,
+      cols,
+      cells: rows.map((row) => row.map((c) => c.trim())),
+    }
   } else if (!/[[\]]/.test(value)) {
     const cells = value.split(',').map((c) => c.trim())
     shape = { form: 'list', rows: 1, cols: cells.length, cells: [cells] }
@@ -53,12 +61,17 @@ export function valueOf(shape, cells) {
 // Each cell that is no number, as [row, col], for the grid to mark and Send to wait on.
 export function badCells(cells) {
   const bad = []
-  cells.forEach((row, r) => row.forEach((c, k) => { if (!numeric(c)) bad.push([r, k]) }))
+  cells.forEach((row, r) =>
+    row.forEach((c, k) => {
+      if (!numeric(c)) bad.push([r, k])
+    }),
+  )
   return bad
 }
 
 // What a grid says of a leaf that has none: why it is the text field instead.
-export const NO_GRID = "WarpTwin wrote no current value for it, so it can't be shown as a grid: enter it as text, [[a,b,…][…]]"
+export const NO_GRID =
+  "WarpTwin wrote no current value for it, so it can't be shown as a grid: enter it as text, [[a,b,…][…]]"
 
 // The node at a dotted address in the tree, or null.
 export function nodeAt(tree, address) {
@@ -77,7 +90,10 @@ function detailOf(node) {
   if (node.children) return ''
   const shape = shapeOf(node.type, node.value)
   const size = shape === null ? '' : ` ${shape.rows}×${shape.cols}`
-  const value = typeof node.value === 'string' && node.value !== '' ? `  ${node.value.length > 32 ? `${node.value.slice(0, 31)}…` : node.value}` : ''
+  const value =
+    typeof node.value === 'string' && node.value !== ''
+      ? `  ${node.value.length > 32 ? `${node.value.slice(0, 31)}…` : node.value}`
+      : ''
   return `${node.type ?? ''}${size}${value}`
 }
 
@@ -92,7 +108,11 @@ export function nextSegments(tree, typed, limit = 100) {
   const partial = (lastDot >= 0 ? raw.slice(lastDot + 1) : raw).toLowerCase()
   const level = base === '' ? [tree] : (nodeAt(tree, base)?.children ?? [])
   const starting = level.filter((n) => n.name.toLowerCase().startsWith(partial))
-  const holding = level.filter((n) => !n.name.toLowerCase().startsWith(partial) && n.name.toLowerCase().includes(partial))
+  const holding = level.filter(
+    (n) =>
+      !n.name.toLowerCase().startsWith(partial) &&
+      n.name.toLowerCase().includes(partial),
+  )
   return [...starting, ...holding].slice(0, limit).map((n) => ({
     name: n.name,
     address: n.address,

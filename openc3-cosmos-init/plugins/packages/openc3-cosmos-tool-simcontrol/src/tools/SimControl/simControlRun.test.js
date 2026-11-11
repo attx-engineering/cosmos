@@ -36,10 +36,21 @@ test('run.json read: running with its heartbeat, or ended; anything else none', 
   })
   const ended = { ...RUNNING, state: 'ended', ended: RUNNING.heartbeat }
   delete ended.heartbeat
-  assert.deepEqual(runOf(JSON.stringify(ended)), { state: 'ended', script: RUNNING.script, started: RUNNING.started })
-  for (const text of ['', '{', 'null', '[]', JSON.stringify({ ...RUNNING, format: 'other' }),
-    JSON.stringify({ ...RUNNING, heartbeat: undefined }), JSON.stringify({ ...RUNNING, state: 'paused' }),
-    JSON.stringify({ ...RUNNING, script: 7 })]) {
+  assert.deepEqual(runOf(JSON.stringify(ended)), {
+    state: 'ended',
+    script: RUNNING.script,
+    started: RUNNING.started,
+  })
+  for (const text of [
+    '',
+    '{',
+    'null',
+    '[]',
+    JSON.stringify({ ...RUNNING, format: 'other' }),
+    JSON.stringify({ ...RUNNING, heartbeat: undefined }),
+    JSON.stringify({ ...RUNNING, state: 'paused' }),
+    JSON.stringify({ ...RUNNING, script: 7 }),
+  ]) {
     assert.equal(runOf(text), null, text)
   }
 })
@@ -52,15 +63,31 @@ test('the run, while its heartbeat is fresh; no run once it ends, or its heartbe
     started: RUNNING.started,
     text: 'Run: scripts/demo/script.py, since 10:42',
   })
-  const none = { running: false, text: 'No run: start a simulation in the WarpWare app, and it connects here' }
-  assert.deepEqual(runLine(status, new Date(new Date(RUNNING.heartbeat).getTime() + RUN_STALE_MS + 1)), none, 'its process stopped')
-  assert.deepEqual(runLine(runOf(JSON.stringify({ ...RUNNING, state: 'ended' })), now), none)
+  const none = {
+    running: false,
+    text: 'No run: start a simulation in the WarpWare app, and it connects here',
+  }
+  assert.deepEqual(
+    runLine(
+      status,
+      new Date(new Date(RUNNING.heartbeat).getTime() + RUN_STALE_MS + 1),
+    ),
+    none,
+    'its process stopped',
+  )
+  assert.deepEqual(
+    runLine(runOf(JSON.stringify({ ...RUNNING, state: 'ended' })), now),
+    none,
+  )
   assert.deepEqual(runLine(null, now), none)
 })
 
 test('when a run started: its time today, else its day too', () => {
   const now = new Date(2026, 10, 10, 15, 0)
   assert.equal(since(new Date(2026, 10, 10, 9, 5).toISOString(), now), '09:05')
-  assert.equal(since(new Date(2026, 10, 9, 22, 41).toISOString(), now), 'Nov 9, 22:41')
+  assert.equal(
+    since(new Date(2026, 10, 9, 22, 41).toISOString(), now),
+    'Nov 9, 22:41',
+  )
   assert.equal(since('not a time', now), 'not a time')
 })

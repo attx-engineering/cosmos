@@ -30,12 +30,20 @@ export function runOf(text) {
   } catch {
     return null
   }
-  if (json === null || typeof json !== 'object' || json.format !== RUN_FORMAT) return null
-  if (typeof json.script !== 'string' || typeof json.started !== 'string') return null
+  if (json === null || typeof json !== 'object' || json.format !== RUN_FORMAT)
+    return null
+  if (typeof json.script !== 'string' || typeof json.started !== 'string')
+    return null
   if (json.state === 'running' && typeof json.heartbeat === 'string') {
-    return { state: 'running', script: json.script, started: json.started, heartbeat: json.heartbeat }
+    return {
+      state: 'running',
+      script: json.script,
+      started: json.started,
+      heartbeat: json.heartbeat,
+    }
   }
-  if (json.state === 'ended') return { state: 'ended', script: json.script, started: json.started }
+  if (json.state === 'ended')
+    return { state: 'ended', script: json.script, started: json.started }
   return null
 }
 
@@ -56,6 +64,14 @@ export function runLine(status, now = new Date()) {
     status !== null &&
     status.state === 'running' &&
     now.getTime() - new Date(status.heartbeat).getTime() <= RUN_STALE_MS
-  if (live) return { running: true, started: status.started, text: `Run: ${status.script}, since ${since(status.started, now)}` }
-  return { running: false, text: 'No run: start a simulation in the WarpWare app, and it connects here' }
+  if (live)
+    return {
+      running: true,
+      started: status.started,
+      text: `Run: ${status.script}, since ${since(status.started, now)}`,
+    }
+  return {
+    running: false,
+    text: 'No run: start a simulation in the WarpWare app, and it connects here',
+  }
 }
