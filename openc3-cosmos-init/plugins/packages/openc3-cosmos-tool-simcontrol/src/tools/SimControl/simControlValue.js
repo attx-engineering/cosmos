@@ -11,9 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-// Sim Control's address and value, made friendlier (James, 2026-11-10): "If a value is a vector, matrix, or quat, then
-// it should show an array of input values. The search bar for value names to change should have suggestions to the
-// next '.' in the address."
+// Sim Control's address and value, made friendlier: a vector, matrix or quaternion shows as a grid of input values,
+// and the address being typed is suggested to its next '.'.
 //
 // A value's grid takes its shape from the value WarpTwin wrote in the run's graph_tree.json, in WarpOS's own text form:
 // [[a][b][c]] a column, as a quaternion is, scalar first; [[a,b,c][d,e,f]] a matrix, row by row; a,b,c a list. The grid

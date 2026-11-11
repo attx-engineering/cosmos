@@ -462,7 +462,7 @@ export default {
     gridBad() {
       return this.gridCells ? badCells(this.gridCells) : []
     },
-    // The next segment of the address for what's typed, to the next '.' (James, 2026-11-10): the children of the path
+    // The next segment of the address for what's typed, to the next '.': the children of the path
     // chosen so far, by name, case aside, those starting with what's typed before those holding it (simControlValue.js).
     addressSuggestions() {
       return nextSegments(this.tree, this.address)
