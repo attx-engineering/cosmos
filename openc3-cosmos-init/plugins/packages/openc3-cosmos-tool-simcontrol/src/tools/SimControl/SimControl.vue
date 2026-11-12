@@ -124,7 +124,7 @@
             >
               <template #activator="{ props }">
                 <v-text-field
-                  v-bind="props"
+                  v-bind="fieldProps(props)"
                   v-model="address"
                   label="Simulation Address"
                   placeholder=".exc.spacecraft.params.mass"
@@ -754,6 +754,14 @@ export default {
     selectCurrentValue(event) {
       if (this.value === '' || this.value !== this.autofilled) return
       event.target?.select?.()
+    },
+    // The menu's activator props for the address field, but its key handler: on an
+    // arrow key, Vuetify's menu stops every other handler and moves the focus into
+    // its list, out of the field, so Tab then left the field with nothing taken.
+    // The field's own handler (onAddressKey) chooses a suggestion with the arrows.
+    fieldProps(props) {
+      const { onKeydown, ...rest } = props
+      return rest
     },
     // Show the suggestion menu when the tree is loaded and there is at least
     // one candidate for what's currently typed.
