@@ -305,7 +305,7 @@
 <script>
 import { Api, OpenC3Api } from '@openc3/js-common/services'
 import { TopBar } from '@openc3/vue-common/components'
-import { runLine, runOf } from './simControlRun.js'
+import { runLine, runOf, treeAwaited } from './simControlRun.js'
 import {
   accepted,
   badCells,
@@ -394,7 +394,8 @@ export default {
       // The run the WarpWare app last said holds WarpLink (run.json): undefined while none has ever been said, null when
       // what it said is not read; when it started, so a new run's tree is taken at once; and when it was last looked at.
       run: undefined,
-      runStarted: '',
+      runStarted: null,
+      treeAwaited: null,
       runLookedAt: 0,
       runTimer: null,
       // Whether the SIM_CONTROL target reads the simulation's replies (its REPLY packet), and each value's own number, which
@@ -734,17 +735,23 @@ export default {
       this.runLookedAt = Date.now()
       if (text === undefined) {
         if (this.run !== undefined) this.run = null
+        if (this.runStarted === null) this.runStarted = ''
         return
       }
       const run = runOf(text)
-      if (
-        run !== null &&
-        run.state === 'running' &&
-        run.started !== this.runStarted &&
-        this.treeSource !== 'file'
-      ) {
-        this.loadGraphTree()
-      }
+      // A new run's tree, asked for at each look until it is in: the run puts it
+      // once WarpTwin has written it, which can be after the run is first seen.
+      this.treeAwaited =
+        this.treeSource === 'file'
+          ? null
+          : treeAwaited(
+              this.treeAwaited,
+              run,
+              this.runStarted,
+              this.treeText,
+              Date.now(),
+            )
+      if (this.treeAwaited !== null) this.loadGraphTree()
       this.runStarted = run?.started ?? ''
       this.run = run
     },

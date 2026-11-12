@@ -16,7 +16,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { RUN_STALE_MS, runLine, runOf, since } from './simControlRun.js'
+import {
+  RUN_STALE_MS,
+  runLine,
+  runOf,
+  since,
+  TREE_WAIT_MS,
+  treeAwaited,
+} from './simControlRun.js'
 
 const RUNNING = {
   format: 'warpware.sim-run/1',
@@ -90,4 +97,42 @@ test('when a run started: its time today, else its day too', () => {
     'Nov 9, 22:41',
   )
   assert.equal(since('not a time', now), 'not a time')
+})
+
+test("a new run's tree, asked for at each look until it is in, or the wait is over", () => {
+  const run = {
+    state: 'running',
+    script: 'scripts/demo/script.py',
+    started: 'B',
+  }
+  // A run newly seen: its tree awaited, from the one in use before it.
+  const first = treeAwaited(null, run, 'A', 'old tree', 1000)
+  assert.deepEqual(first, { started: 'B', before: 'old tree', since: 1000 })
+  assert.deepEqual(
+    treeAwaited(null, run, '', '', 1000),
+    { started: 'B', before: '', since: 1000 },
+    'after a look that found no run',
+  )
+  // Still awaited while the same tree is in use, the run not yet having put its own.
+  assert.equal(treeAwaited(first, run, 'B', 'old tree', 3000), first)
+  // In once the tree in use is another: awaited no more.
+  assert.equal(treeAwaited(first, run, 'B', 'new tree', 5000), null)
+  // Over once the wait is: what COSMOS holds is the run's.
+  assert.equal(
+    treeAwaited(first, run, 'B', 'old tree', 1000 + TREE_WAIT_MS + 1),
+    null,
+  )
+  // The first look: the tree COSMOS holds was asked for already, unless none was in use.
+  assert.equal(treeAwaited(null, run, null, 'its tree', 1000), null)
+  assert.deepEqual(treeAwaited(null, run, null, '', 1000), {
+    started: 'B',
+    before: '',
+    since: 1000,
+  })
+  // No run, or one ended: nothing awaited.
+  assert.equal(treeAwaited(first, null, 'B', 'old tree', 2000), null)
+  assert.equal(
+    treeAwaited(first, { ...run, state: 'ended' }, 'B', 'old tree', 2000),
+    null,
+  )
 })

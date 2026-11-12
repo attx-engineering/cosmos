@@ -75,3 +75,25 @@ export function runLine(status, now = new Date()) {
     text: 'No run: start a simulation in the WarpWare app, and it connects here',
   }
 }
+
+// How long a new run's tree is looked for, at each look at the run, before what
+// COSMOS holds is taken as the run's: the run puts its tree once WarpTwin has
+// written it, which can be after the run is first seen.
+export const TREE_WAIT_MS = 60000
+
+// The tree awaited after a look at the run, or null: from a running run newly
+// seen, its own, until the tree in use is another than the one before it or
+// the wait is over. `awaited` is the last look's ({ started, before, since });
+// `lastStarted` the start of the run last seen, null before the first look,
+// when the tree COSMOS holds was asked for already, unless there was none.
+export function treeAwaited(awaited, run, lastStarted, treeText, now) {
+  if (run === null || run.state !== 'running') return null
+  if (run.started !== lastStarted) {
+    if (lastStarted === null && treeText !== '') return null
+    return { started: run.started, before: treeText, since: now }
+  }
+  if (awaited === null || awaited.started !== run.started) return null
+  if (treeText !== awaited.before || now - awaited.since > TREE_WAIT_MS)
+    return null
+  return awaited
+}
